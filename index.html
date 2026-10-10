@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b1511">
 <title>Duelist</title>
+<!-- Duelist game 0.6 · online server v1.1 -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>html,body{background:#0b1511}body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Saira+Condensed:wght@600;800&display=swap">
 <style>
@@ -117,29 +123,77 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
 .quit{background:none;color:var(--muted);font-size:14px;padding:6px;justify-self:center;text-decoration:underline;text-underline-offset:3px}
 
 @media (prefers-reduced-motion:reduce){ .flash{animation:none} }
+
+/* 0.5: game picker, nickname, stats */
+.hub-title{font-family:var(--display);font-weight:800;font-size:clamp(40px,12vw,56px);line-height:.9;margin:0;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}
+.hub-title .a{color:var(--teamA)} .hub-title .b{color:var(--teamB)}
+.who{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:15px}
+.who b{color:var(--chalk);font-family:var(--display);font-size:20px;letter-spacing:.03em;text-transform:uppercase}
+.who .link{background:none;color:var(--muted);text-decoration:underline;text-underline-offset:3px;padding:4px 2px;font-size:15px}
+.nickrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;width:100%}
+.nickrow input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--chalk);font:inherit;font-size:18px}
+.nickrow button{padding:0 18px;border-radius:12px;background:var(--chalk);color:var(--night);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+.games{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.game{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 10px;border-radius:12px;background:var(--panel);border:1.5px solid var(--line);text-align:left;min-width:0}
+.game svg{width:30px;height:30px}
+.game b{font-family:var(--display);font-weight:800;font-size:17px;line-height:1.05;text-transform:uppercase;letter-spacing:.02em}
+.game small{font-size:12.5px;color:var(--muted);line-height:1.3}
+.game[aria-checked="true"]{border-color:var(--chalk);background:#1a2c23}
+.stats{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px}
+.stats h3{margin:0;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile{display:grid;gap:0}
+.tile b{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--muted)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;font-size:14px;align-items:baseline;border-top:1px solid var(--line);padding-top:7px;font-variant-numeric:tabular-nums}
+.srow span:first-child{color:var(--chalk)} .srow span{color:var(--muted)}
+.gamehead{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* 0.5: in-game extras */
+.mute{position:absolute;bottom:8px;right:8px;width:34px;height:34px;border-radius:50%;background:rgba(7,13,10,.6);display:grid;place-items:center;z-index:3}
+.mute svg{width:18px;height:18px}
+.skiphint{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:13px;color:rgba(238,243,234,.7);pointer-events:none;z-index:2}
+.bubble{position:absolute;top:44px;max-width:70%;padding:6px 12px;border-radius:999px;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.02em;color:#08110c;z-index:3;animation:bub 2.6s ease forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bubble.l{left:10px} .bubble.r{right:10px}
+@keyframes bub{0%{opacity:0;transform:translateY(6px) scale(.9)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.reacts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.reacts button{padding:10px 4px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.03em}
+.reacts button:active{background:var(--chalk);color:var(--night)}
+.timer{height:4px;border-radius:2px;background:rgba(8,17,12,.25);overflow:hidden;margin-top:6px}
+.timer i{display:block;height:100%;background:#08110c;width:100%}
+.role div{flex:1}
+.pick i{font-size:26px}
+@media (prefers-reduced-motion:reduce){ .bubble{animation:none} }
 </style>
-</head>
-<body>
 
 <div class="app">
   <section class="menu" id="menu">
-    <h1><span class="a">Penalty</span><br><span class="b">Duel</span></h1>
-    <ul class="rules">
-      <li><b>Shooter</b> picks left, middle or right.</li>
-      <li><b>Keeper</b> picks where to dive, in secret.</li>
-      <li><b>Format</b> 5 kicks each, then sudden death.</li>
-    </ul>
+    <div style="display:grid;gap:10px">
+      <h1 class="hub-title">Pick your <span class="a">du</span><span class="b">el</span></h1>
+      <div class="who" id="who"></div>
+    </div>
+    <div class="games" id="games" role="radiogroup" aria-label="Game">
+      <button class="game" data-game="pen" role="radio" aria-checked="true">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="#f4f6f2"/><polygon points="15,9 20.5,13 18.5,19.5 11.5,19.5 9.5,13" fill="#0b1511"/></svg>
+        <b>Penalty Duel</b><small>5 kicks each, then sudden death</small></button>
+      <button class="game" data-game="rps" role="radio" aria-checked="false">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="5" y="9" width="17" height="15" rx="6" fill="#e2b08a"/><rect x="9" y="5" width="12" height="7" rx="3.5" fill="#f1caa6"/><rect x="18" y="12" width="7" height="10" rx="3.5" fill="#c08a64"/></svg>
+        <b>Rock Paper Scissors</b><small>First to 3 rounds</small></button>
+      <button class="game" data-game="mix" role="radio" aria-checked="false">
+        <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="6" width="11" height="18" rx="3" fill="#3d9bff"/><rect x="16" y="6" width="11" height="18" rx="3" fill="#ff8a2a"/><text x="15" y="19" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="10" fill="#08110c">VS</text></svg>
+        <b>Mixed Duel</b><small>Penalties, RPS, then a decider</small></button>
+    </div>
     <div class="modes">
-      <button class="btn primary" id="cpuBtn">Play vs computer<small>You wear blue and shoot first.</small></button>
+      <button class="btn primary" id="cpuBtn">Play vs computer<small id="cpuSub">You wear blue.</small></button>
       <button class="btn" id="onlineBtn">Play a friend online<small>Each on your own phone. Picks stay secret.</small></button>
       <button class="btn" id="localBtn">2 players, one phone<small>Blue vs orange. Pass the phone between turns.</small></button>
     </div>
+    <div class="stats" id="stats"></div>
   </section>
 
   <section class="lobby" id="lobby" hidden>
-    <h2>Play a friend</h2>
+    <div style="display:grid;gap:4px"><span class="gamehead" id="lobbyGame"></span><h2>Play a friend</h2></div>
     <div id="lobbyForm" style="display:grid;gap:16px">
-      <div class="field"><label for="nick">Your name</label><input id="nick" maxlength="12" autocomplete="nickname" placeholder="e.g. Alex"></div>
       <button class="btn primary" id="createBtn">Create a match<small>You get a code to send your friend.</small></button>
       <div class="or">or</div>
       <div class="field"><label for="codeIn">Join with a code</label>
@@ -147,8 +201,9 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
       </div>
     </div>
     <div id="waitBox" hidden style="display:grid;gap:14px">
-      <p>Send your friend the link to this page, plus this code:</p>
+      <p>Invite a friend in Telegram, or tell them this code:</p>
       <div class="code" id="codeShow"></div>
+      <button class="btn primary" id="shareBtn">Send invite<small>Your friend taps the link and joins straight away.</small></button>
       <button class="copy" id="copyBtn">Copy code</button>
       <p class="wait"><span class="pulse"></span>Waiting for your friend to join…</p>
     </div>
@@ -164,7 +219,9 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     </div>
 
     <div class="stage" id="stage">
-      <canvas id="pitch" aria-label="Penalty kick"></canvas>
+      <canvas id="pitch" aria-label="Game scene"></canvas>
+      <button class="mute" id="muteBtn" aria-label="Turn sound off"></button>
+      <div class="skiphint" id="skipHint" hidden>Tap to skip</div>
       <div class="flash" id="flash" hidden><b id="flashBig"></b><span id="flashSmall"></span></div>
       <div class="handoff" id="handoff" hidden>
         <h2 id="handTitle"></h2>
@@ -175,7 +232,7 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
 
     <div class="role" id="role">
       <svg id="roleIcon" viewBox="0 0 34 34" aria-hidden="true"></svg>
-      <div><h3 id="roleTitle"></h3><p id="roleSub"></p></div>
+      <div><h3 id="roleTitle"></h3><p id="roleSub"></p><div class="timer" id="roleTimer" hidden><i id="roleTimerBar"></i></div></div>
     </div>
 
     <div class="waitbar" id="waitbar" hidden>
@@ -184,13 +241,18 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     </div>
 
     <div class="picks" id="picks">
-      <button class="pick" data-z="0"><i>←</i>Left</button>
-      <button class="pick" data-z="1"><i>↑</i>Middle</button>
-      <button class="pick" data-z="2"><i>→</i>Right</button>
+      <button class="pick" data-z="0"><i>←</i><span>Left</span></button>
+      <button class="pick" data-z="1"><i>↑</i><span>Middle</span></button>
+      <button class="pick" data-z="2"><i>→</i><span>Right</span></button>
+    </div>
+
+    <div class="reacts" id="reacts" hidden>
+      <button data-r="Nice!">Nice!</button><button data-r="Lucky!">Lucky!</button><button data-r="Wow">Wow</button><button data-r="GG">GG</button>
     </div>
 
     <div class="actions">
       <button class="btn primary" id="nextBtn" hidden>Next kick</button>
+      <button class="btn primary" id="nextGameBtn" hidden>Next game</button>
       <button class="btn primary" id="rematchBtn" hidden>Rematch</button>
       <button class="quit" id="quitBtn">Back to menu</button>
     </div>
@@ -210,6 +272,19 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
   var CROSS = '<svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var S = null;
+
+  // Telegram Mini App: dark header, back button, phone vibration, the player's Telegram name.
+  var TG = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) ? window.Telegram.WebApp : null;
+  function tgOk(v){ try { return !!(TG && TG.isVersionAtLeast && TG.isVersionAtLeast(v)); } catch (e) { return false; } }
+  if (TG){
+    try { TG.ready(); TG.expand(); } catch (e) {}
+    try { if (tgOk('6.1')){ TG.setHeaderColor('#0b1511'); TG.setBackgroundColor('#0b1511'); } } catch (e) {}
+    try { if (tgOk('7.7')) TG.disableVerticalSwipes(); } catch (e) {}
+  }
+  function tgBack(show){
+    if (!TG || !tgOk('6.1') || !TG.BackButton) return;
+    try { if (show) TG.BackButton.show(); else TG.BackButton.hide(); } catch (e) {}
+  }
 
   /* =====================================================================
      SCENE: a small 3D world in metres, seen by a broadcast camera
@@ -683,7 +758,7 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     ctx.fillText(text.toUpperCase(), H[0], y + 8);
   }
 
-  var A = {playing:false, start:0, plan:null, done:true, onDone:null, freeze:null};
+  var A = {playing:false, start:0, plan:null, rps:null, ev:[], resultT:RESULT_T, done:true, onDone:null, freeze:null};
 
   function render(t){
     if (!S || !cv.width) return;
@@ -717,6 +792,288 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     }
   }
 
+  /* =====================================================================
+     ROCK PAPER SCISSORS SCENE
+     Two arms reach in from the sides of the stadium, pump three times
+     ("rock... paper... scissors...") and throw together. Hands are drawn
+     as real anatomy seen from the thumb side: palm, knuckles, separate
+     tapered fingers with joints and nails, and a thumb that wraps or
+     opens depending on the sign.
+     ===================================================================== */
+  var PUMP = 0.4, RPS_REVEAL = 1.2, RPS_RESULT_T = 2.35;
+  var SKINS = [
+    {base:'#e2b08a', light:'#f3cfab', shade:'#b98262', line:'rgba(96,52,30,.55)', nail:'rgba(255,236,226,.6)', crease:'rgba(120,64,40,.45)'},
+    {base:'#a86f48', light:'#c68d63', shade:'#7c4d31', line:'rgba(52,26,14,.6)', nail:'rgba(236,204,186,.5)', crease:'rgba(60,30,16,.5)'}
+  ];
+  var SIGN = ['rock', 'paper', 'scissors'];
+
+  function grad(c, y0, y1, sk){
+    var g = c.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, sk.light); g.addColorStop(0.45, sk.base); g.addColorStop(1, sk.shade);
+    return g;
+  }
+  // One finger: a tapered capsule pointing along +x from its base, with joint creases and a nail.
+  function finger(c, x, y, ang, len, w, sk, nail){
+    c.save(); c.translate(x, y); c.rotate(ang);
+    var tip = w * 0.42;
+    c.beginPath();
+    c.moveTo(0, -w / 2);
+    c.quadraticCurveTo(len * 0.5, -w * 0.54, len - tip, -w * 0.38);
+    c.quadraticCurveTo(len + 1, -w * 0.32, len + 1, 0);
+    c.quadraticCurveTo(len + 1, w * 0.34, len - tip, w * 0.36);
+    c.quadraticCurveTo(len * 0.5, w * 0.5, 0, w / 2);
+    c.closePath();
+    c.fillStyle = grad(c, -w / 2, w / 2, sk); c.fill();
+    c.strokeStyle = sk.line; c.lineWidth = 1; c.stroke();
+    c.strokeStyle = sk.crease; c.lineWidth = 0.9;
+    [0.42, 0.72].forEach(function(f){
+      c.beginPath(); c.moveTo(len * f, -w * 0.4); c.quadraticCurveTo(len * f + 1.2, -w * 0.1, len * f, w * 0.05); c.stroke();
+    });
+    if (nail){
+      c.fillStyle = sk.nail;
+      c.beginPath();
+      if (c.roundRect) c.roundRect(len - w * 0.7, -w * 0.36, w * 0.55, w * 0.3, w * 0.14); else c.rect(len - w * 0.7, -w * 0.36, w * 0.55, w * 0.3);
+      c.fill();
+    }
+    c.restore();
+  }
+  // A curled finger seen end-on from the side: the middle segment with a knuckle bump.
+  function curled(c, x, y, w, h, sk){
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, h * 0.5); else c.rect(x, y, w, h);
+    c.fillStyle = grad(c, y, y + h, sk); c.fill();
+    c.strokeStyle = sk.line; c.lineWidth = 1; c.stroke();
+    c.strokeStyle = sk.crease; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(x + w * 0.55, y + 1.5); c.lineTo(x + w * 0.55, y + h - 1.5); c.stroke();
+  }
+  function palm(c, sk, front){
+    c.beginPath();
+    c.moveTo(-8, -15);
+    c.bezierCurveTo(6, -20, 24, -21, front - 4, -18);
+    c.bezierCurveTo(front + 3, -15, front + 4, 11, front - 2, 16);
+    c.bezierCurveTo(22, 21, 4, 21, -8, 15);
+    c.closePath();
+    c.fillStyle = grad(c, -20, 20, sk); c.fill();
+    c.strokeStyle = sk.line; c.lineWidth = 1; c.stroke();
+    // tendons on the back of the hand
+    c.strokeStyle = 'rgba(255,240,225,.18)'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(2, -14); c.quadraticCurveTo(16, -17, front - 6, -16); c.stroke();
+  }
+  function handShape(c, sign, sk){
+    if (sign === 'rock'){
+      palm(c, sk, 38);
+      for (var i = 3; i >= 0; i--) curled(c, 28, -14 + i * 8.2, 20, 8.6, sk);
+      finger(c, 0, -13, 0.34, 34, 11.5, sk, true);                    // thumb wrapped across the front
+    } else if (sign === 'paper'){
+      var ys = [11, 3.5, -4, -11.5], lens = [33, 41, 44, 40], angs = [0.08, 0.03, -0.02, -0.07];
+      for (var k = 0; k < 4; k++) finger(c, 28, ys[k], angs[k], lens[k], 8.6, sk, k === 3);
+      palm(c, sk, 34);
+      finger(c, 6, -13, -0.62, 29, 11, sk, true);                      // thumb opened upward
+    } else {
+      curled(c, 27, 6, 19, 8.4, sk); curled(c, 27, 13.5, 18, 7.8, sk);  // ring and little finger curled
+      finger(c, 28, -2, 0.12, 46, 9.2, sk, false);                       // middle finger
+      palm(c, sk, 34);
+      finger(c, 28, -10.5, -0.3, 44, 9.4, sk, true);                     // index finger
+      finger(c, 4, -9, 0.42, 30, 11, sk, true);                          // thumb over the curled fingers
+    }
+  }
+  function rpsArm(c, side, sign, ang, pop, kit, sk, dim){
+    c.save();
+    c.globalAlpha = dim;
+    if (side === 1){ c.translate(400, 0); c.scale(-1, 1); }
+    c.translate(-62, 190);
+    c.rotate(ang);
+    // sleeve with cuff and folds
+    var sg = c.createLinearGradient(0, -30, 0, 30);
+    sg.addColorStop(0, kit); sg.addColorStop(1, 'rgba(0,0,0,.35)');
+    c.beginPath(); c.moveTo(-40, -30); c.lineTo(92, -24); c.quadraticCurveTo(100, 0, 92, 24); c.lineTo(-40, 32); c.closePath();
+    c.fillStyle = kit; c.fill(); c.fillStyle = sg; c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(30, -26); c.quadraticCurveTo(40, -6, 34, 14); c.stroke();
+    c.beginPath(); c.moveTo(60, -24); c.quadraticCurveTo(66, 0, 58, 20); c.stroke();
+    c.fillStyle = '#f4f6f2'; c.fillRect(84, -24, 8, 48);
+    // forearm tapering to the wrist
+    c.beginPath();
+    c.moveTo(90, -19); c.bezierCurveTo(120, -20, 140, -16, 168, -13);
+    c.lineTo(168, 13); c.bezierCurveTo(140, 16, 118, 22, 90, 20);
+    c.closePath();
+    c.fillStyle = grad(c, -20, 22, sk); c.fill();
+    c.strokeStyle = sk.line; c.lineWidth = 1; c.stroke();
+    c.strokeStyle = sk.crease; c.lineWidth = 0.8;
+    c.beginPath(); c.moveTo(166, -10); c.quadraticCurveTo(169, 0, 166, 10); c.stroke();
+    // the hand
+    c.translate(174, 0);
+    c.scale(pop, pop);
+    handShape(c, sign, sk);
+    c.restore();
+  }
+  function pill(c, x, y, text, col, align){
+    c.font = '800 12px "Saira Condensed","Arial Narrow",sans-serif';
+    var w = c.measureText(text).width + 14, bx = align === 'r' ? x - w : x;
+    c.fillStyle = col; c.beginPath();
+    if (c.roundRect) c.roundRect(bx, y, w, 18, 4); else c.rect(bx, y, w, 18);
+    c.fill();
+    c.fillStyle = '#08110c'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(text.toUpperCase(), bx + w / 2, y + 9.5);
+  }
+  function rpsBeats(a, b){ return a === b ? null : ((a - b + 3) % 3 === 1 ? 0 : 1); }
+
+  function renderRps(t){
+    if (!S || !cv.width) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(bg, 0, 0);
+    ctx.setTransform(K, 0, 0, K, 0, 0);
+    ctx.fillStyle = 'rgba(5,10,8,.62)'; ctx.fillRect(0, 0, 400, 300);
+    var spot = ctx.createRadialGradient(200, 190, 20, 200, 190, 220);
+    spot.addColorStop(0, 'rgba(255,244,214,.16)'); spot.addColorStop(1, 'rgba(255,244,214,0)');
+    ctx.fillStyle = spot; ctx.fillRect(0, 0, 400, 300);
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.ellipse(128, 262, 60, 8, 0, 0, Math.PI * 2); ctx.ellipse(272, 262, 60, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+    var R = A.rps, signA = 'rock', signB = 'rock', ang = 0, pop = 1, dropA = 0, dropB = 0, word = null;
+    if (!R){
+      ang = Math.sin(clock * 2.2) * 0.012;
+    } else if (t < RPS_REVEAL){
+      var n = Math.floor(t / PUMP), ph = (t % PUMP) / PUMP;
+      var lift = ph < 0.55 ? 1 - Math.pow(1 - ph / 0.55, 2) : 1 - Math.pow((ph - 0.55) / 0.45, 2);
+      ang = -lift * 0.2;
+      word = ['Rock', 'Paper', 'Scissors'][Math.min(2, n)];
+    } else {
+      signA = SIGN[R.a]; signB = SIGN[R.b];
+      var k = (t - RPS_REVEAL) / 0.16;
+      pop = k < 1 ? 0.86 + 0.2 * k : 1.06 - Math.min(0.06, (k - 1) * 0.04);
+      if (t < RPS_REVEAL + 0.45) word = 'Shoot!';
+      var fade = clamp((t - RPS_REVEAL - 0.5) / 0.3, 0, 1);
+      var droop = 0.16 * (fade * fade * (3 - 2 * fade));   // the losing hand sinks away
+      if (R.w === 1) dropA = droop;
+      if (R.w === 0) dropB = droop;
+    }
+    rpsArm(ctx, 0, signA, ang + dropA, pop, KITC[0], SKINS[0], 1);
+    rpsArm(ctx, 1, signB, ang + dropB, pop, KITC[1], SKINS[1], 1);
+
+    pill(ctx, 12, 12, name(0), KITC[0], 'l');
+    pill(ctx, 388, 12, name(1), KITC[1], 'r');
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (word){
+      ctx.fillStyle = '#eef3ea';
+      ctx.font = '800 34px "Saira Condensed","Arial Narrow",sans-serif';
+      ctx.fillText(word.toUpperCase(), 200, 74);
+    } else if (R && t >= RPS_REVEAL + 0.45){
+      var line = R.w === null ? 'Draw' : SIGN[R.w === 0 ? R.a : R.b] + ' beats ' + SIGN[R.w === 0 ? R.b : R.a];
+      ctx.fillStyle = R.w === null ? '#eef3ea' : KITC[R.w];
+      ctx.font = '800 30px "Saira Condensed","Arial Narrow",sans-serif';
+      ctx.fillText(line.toUpperCase(), 200, 74);
+    } else if (!R){
+      ctx.fillStyle = 'rgba(238,243,234,.55)';
+      ctx.font = '600 15px "Barlow",system-ui,sans-serif';
+      ctx.fillText('Pick your sign below', 200, 74);
+    }
+  }
+
+  /* =====================================================================
+     SOUND (generated live, no files) + HAPTICS
+     ===================================================================== */
+  var Snd = {ctx:null, nb:null, amb:null, muted:false};
+  try { Snd.muted = localStorage.getItem('pd-mute') === '1'; } catch (e) {}
+  function ac(){
+    if (Snd.muted) return null;
+    if (!Snd.ctx){
+      try { Snd.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    }
+    if (Snd.ctx.state === 'suspended') Snd.ctx.resume();
+    return Snd.ctx;
+  }
+  function noise(c){
+    if (Snd.nb) return Snd.nb;
+    var b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return (Snd.nb = b);
+  }
+  function envGain(c, t0, a, peak, d){
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d);
+    g.connect(c.destination);
+    return g;
+  }
+  function burst(type, freq, q, a, peak, d, sweepTo){
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime, s = c.createBufferSource(), f = c.createBiquadFilter();
+    s.buffer = noise(c); f.type = type; f.frequency.setValueAtTime(freq, t0); f.Q.value = q;
+    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t0 + a + d);
+    s.connect(f); f.connect(envGain(c, t0, a, peak, d));
+    s.start(t0, Math.random()); s.stop(t0 + a + d + 0.05);
+  }
+  function tone(type, f0, f1, a, peak, d, delay){
+    var c = ac(); if (!c) return;
+    var t0 = c.currentTime + (delay || 0), o = c.createOscillator();
+    o.type = type; o.frequency.setValueAtTime(f0, t0);
+    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t0 + a + d);
+    o.connect(envGain(c, t0, a, peak, d));
+    o.start(t0); o.stop(t0 + a + d + 0.05);
+  }
+  var SFX = {
+    whistle: function(){
+      var c = ac(); if (!c) return;
+      [0, 0.24].forEach(function(dl, i){
+        var t0 = c.currentTime + dl, o = c.createOscillator(), lfo = c.createOscillator(), lg = c.createGain();
+        o.frequency.value = 2850; lfo.frequency.value = 34; lg.gain.value = 140;
+        lfo.connect(lg); lg.connect(o.frequency); o.connect(envGain(c, t0, 0.015, 0.12, i ? 0.32 : 0.12));
+        o.start(t0); lfo.start(t0); o.stop(t0 + 0.5); lfo.stop(t0 + 0.5);
+      });
+    },
+    kick:  function(){ tone('sine', 150, 45, 0.004, 0.9, 0.17); burst('highpass', 1800, 0.7, 0.002, 0.25, 0.05); },
+    net:   function(){ burst('bandpass', 900, 0.8, 0.01, 0.45, 0.45, 500); },
+    glove: function(){ burst('lowpass', 600, 0.7, 0.003, 0.8, 0.12); tone('sine', 110, 70, 0.003, 0.4, 0.1); },
+    cheer: function(){ burst('bandpass', 700, 0.6, 0.18, 0.5, 1.7, 1100); burst('bandpass', 1500, 1.2, 0.25, 0.18, 1.4); },
+    groan: function(){ burst('lowpass', 520, 0.9, 0.12, 0.42, 1.3, 260); tone('sawtooth', 150, 95, 0.15, 0.03, 1.0); },
+    thump: function(){ tone('sine', 95, 55, 0.004, 0.55, 0.09); },
+    snap:  function(){ burst('highpass', 1600, 0.8, 0.002, 0.55, 0.07); tone('sine', 140, 60, 0.003, 0.4, 0.08); },
+    win:   function(){ tone('triangle', 660, 0, 0.01, 0.18, 0.16); tone('triangle', 990, 0, 0.01, 0.18, 0.28, 0.13); },
+    draw:  function(){ tone('triangle', 520, 0, 0.01, 0.12, 0.2); },
+    tick:  function(){ tone('square', 1200, 0, 0.002, 0.05, 0.03); },
+    pop:   function(){ tone('sine', 700, 1000, 0.005, 0.12, 0.08); }
+  };
+  function ambience(on){
+    var c = on ? ac() : Snd.ctx;
+    if (on && c && !Snd.amb){
+      var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noise(c); s.loop = true; f.type = 'lowpass'; f.frequency.value = 480; g.gain.value = 0.035;
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+      Snd.amb = {s:s, g:g};
+    } else if (!on && Snd.amb){
+      try { Snd.amb.s.stop(); } catch (e) {}
+      Snd.amb = null;
+    }
+  }
+  function buzz(ms){
+    var h = tgOk('6.1') && TG.HapticFeedback;
+    if (h){
+      try { if (Array.isArray(ms)) h.notificationOccurred('success'); else h.impactOccurred(ms >= 40 ? 'heavy' : ms >= 25 ? 'medium' : 'light'); } catch (e) {}
+      return;
+    }
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  }
+  var ICON_SOUND_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="#eef3ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  var ICON_SOUND_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="#eef3ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+  function paintMute(){
+    $('muteBtn').innerHTML = Snd.muted ? ICON_SOUND_OFF : ICON_SOUND_ON;
+    $('muteBtn').setAttribute('aria-label', Snd.muted ? 'Turn sound on' : 'Turn sound off');
+  }
+
+  /* ---------- timed events inside an animation (sounds, haptics) ---------- */
+  function schedule(list){ A.ev = list.map(function(e){ return {t:e[0], f:e[1], last:!!e[2], done:false}; }); }
+  function runEvents(t){
+    (A.ev || []).forEach(function(e){ if (!e.done && t >= e.t){ e.done = true; e.f(); } });
+  }
+  function skipAnim(){
+    if (!A.playing || A.done || A.freeze != null) return;
+    var now = performance.now();
+    (A.ev || []).forEach(function(e){ if (!e.done){ e.done = true; if (e.last) e.f(); } });
+    A.start = now - A.resultT * 1000;
+  }
+
   var last = null;
   function frame(now){
     requestAnimationFrame(frame);
@@ -725,29 +1082,53 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     last = now; clock += dt;
     resize();
     var t = A.freeze != null ? A.freeze : A.playing ? (now - A.start) / 1000 : 0;
-    render(t);
-    if (A.playing && !A.done && t >= RESULT_T){ A.done = true; if (A.onDone) A.onDone(); }
+    if (S && S.game === 'rps') renderRps(t); else render(t);
+    if (A.playing && A.freeze == null) runEvents(t);
+    if (A.playing && !A.done && t >= A.resultT){ A.done = true; $('skipHint').hidden = true; if (A.onDone) A.onDone(); }
   }
   requestAnimationFrame(frame);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if (cv.width) paintBg(); });
 
   /* =====================================================================
      GAME LOGIC
+     S.game  = the game being played right now: 'pen' (penalties), 'rps', or
+               'pensd' (sudden-death penalties, the Mixed Duel decider)
+     S.kind  = what was chosen in the menu: 'pen', 'rps' or 'mix'
+     S.kicks = penalty kicks {shooter, shot, dive, goal}, or RPS rounds {a, b, w}
+     S.series (Mixed Duel only) = {idx, results[]}: which game of the 3, and who won each
      ===================================================================== */
+  var SERIES = ['pen', 'rps', 'pensd'];
+  var GAME_NAME = {pen:'Penalty Duel', rps:'Rock Paper Scissors', pensd:'Sudden-death penalties', mix:'Mixed Duel'};
+  var RPS_TO = 3;
+  var RPS_ICON = ['✊', '✋', '✌️'];
+  var PEN_PICKS = [['←', 'Left'], ['↑', 'Middle'], ['→', 'Right']];
+  var ICON_HAND = '<rect x="7" y="11" width="18" height="16" rx="6" fill="#f4f6f2" stroke="#08110c" stroke-width="2"/><rect x="10" y="6" width="13" height="8" rx="4" fill="#f4f6f2" stroke="#08110c" stroke-width="2"/>';
+  var HUB = {game:'pen'};
+  var TIMER_S = 10;
+
   function rand(){ return Math.floor(Math.random() * 3); }
   function shooter(){ return S.kicks.length % 2; }
   function keeper(){ return 1 - shooter(); }
   function name(p){ return S.names[p]; }
   function isMe(p){ return S.mode === 'cpu' ? p === 0 : S.mode === 'online' ? p === S.me : false; }
 
-  function tally(){
+  function tally(list){
     var g = [0,0], t = [0,0];
-    S.kicks.forEach(function(k){ t[k.shooter]++; if (k.goal) g[k.shooter]++; });
+    (list || S.kicks).forEach(function(k){ t[k.shooter]++; if (k.goal) g[k.shooter]++; });
     return {g:g, t:t};
   }
-
-  function winner(){
-    var r = tally(), g = r.g, t = r.t, n = S.kicks.length;
+  function rpsWins(list){
+    var w = [0,0];
+    (list || S.kicks).forEach(function(r){ if (r.w === 0 || r.w === 1) w[r.w]++; });
+    return w;
+  }
+  function winnerOf(game, list){
+    if (game === 'rps'){
+      var w = rpsWins(list);
+      return w[0] >= RPS_TO ? 0 : w[1] >= RPS_TO ? 1 : null;
+    }
+    var r = tally(list), g = r.g, t = r.t, n = list.length;
+    if (game === 'pensd') return (n > 0 && n % 2 === 0 && g[0] !== g[1]) ? (g[0] > g[1] ? 0 : 1) : null;
     if (n <= 10){
       if (g[0] > g[1] + (5 - t[1])) return 0;
       if (g[1] > g[0] + (5 - t[0])) return 1;
@@ -756,32 +1137,45 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     if (n % 2 === 0 && g[0] !== g[1]) return g[0] > g[1] ? 0 : 1;
     return null;
   }
+  function winner(){ return winnerOf(S.game, S.kicks); }
+  function seriesWins(){
+    var w = [0,0];
+    if (S.series) S.series.results.forEach(function(r){ if (r === 0 || r === 1) w[r]++; });
+    return w;
+  }
 
-  // TV-style board: 5 circles per team for the regulation kicks. If it's level after 5 each,
-  // one more circle per team is added to the right for every sudden-death round. Each kick taken
-  // turns its circle green (scored) or red (missed).
+  // Scoreboard. Penalties: 5 circles per team, plus one more per sudden-death round, added to the right.
+  // The Mixed Duel decider is sudden death from the first kick. RPS: 3 pips per player, one per round won.
   function renderBoard(over){
-    var r = tally(), n = S.kicks.length;
-    var sdRounds = n < 10 ? 0 : (over ? Math.ceil((n - 10) / 2) : Math.floor((n - 10) / 2) + 1);
-    var slots = 5 + sdRounds;
-    var MAXSD = 6;                                 // keep the row on screen in very long shootouts
-    var firstSd = Math.max(0, sdRounds - MAXSD);
-    $('board').classList.toggle('long', sdRounds > 2);
+    var n = S.kicks.length;
+    $('board').classList.remove('long');
     [0,1].forEach(function(p){
       var row = $('row' + p);
       row.querySelector('.nm').textContent = name(p);
-      row.querySelector('.sc').textContent = r.g[p];
-      var mine = S.kicks.filter(function(k){ return k.shooter === p; });
       var dots = row.querySelector('.dots');
       dots.innerHTML = '';
+      if (S.game === 'rps'){
+        var w = rpsWins();
+        row.querySelector('.sc').textContent = w[p];
+        for (var j = 0; j < RPS_TO; j++){
+          var pd = document.createElement('span');
+          pd.className = 'dot' + (j < w[p] ? ' scored' : '');
+          if (j < w[p]) pd.innerHTML = CHECK;
+          dots.appendChild(pd);
+        }
+        return;
+      }
+      var r = tally(), base = S.game === 'pensd' ? 0 : 5;
+      row.querySelector('.sc').textContent = r.g[p];
+      var extraN = Math.max(0, n - base * 2);
+      var sdRounds = n < base * 2 ? 0 : (over ? Math.ceil(extraN / 2) : Math.floor(extraN / 2) + 1);
+      var slots = base + sdRounds, MAXSD = 6, firstSd = Math.max(0, sdRounds - MAXSD);
+      if (sdRounds > 2 && base) $('board').classList.add('long');
+      var mine = S.kicks.filter(function(k){ return k.shooter === p; });
       for (var i = 0; i < slots; i++){
-        if (i >= 5 && i - 5 < firstSd) continue;
-        if (i === 5){
-          var sep = document.createElement('span'); sep.className = 'sdsep'; dots.appendChild(sep);
-        }
-        if (i === 5 + firstSd && firstSd > 0){
-          var more = document.createElement('span'); more.className = 'more'; more.textContent = '+' + firstSd; dots.appendChild(more);
-        }
+        if (i >= base && i - base < firstSd) continue;
+        if (i === base && base){ var sep = document.createElement('span'); sep.className = 'sdsep'; dots.appendChild(sep); }
+        if (i === base + firstSd && firstSd > 0){ var more = document.createElement('span'); more.className = 'more'; more.textContent = '+' + firstSd; dots.appendChild(more); }
         var d = document.createElement('span');
         d.className = 'dot';
         if (i < mine.length){
@@ -792,35 +1186,76 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
         dots.appendChild(d);
       }
     });
-    $('kickLabel').textContent = (over ? 'Full time' :
-      (n < 10 ? 'Round ' + (Math.floor(n / 2) + 1) + ' of 5' : 'Sudden death')) +
-      (S.mode === 'online' ? ' · Match ' + S.code : '');
+    var label;
+    if (over) label = 'Full time';
+    else if (S.game === 'rps') label = 'Round ' + (n + 1) + ' · First to ' + RPS_TO;
+    else if (S.game === 'pensd') label = 'Decider · Sudden death';
+    else label = n < 10 ? 'Round ' + (Math.floor(n / 2) + 1) + ' of 5' : 'Sudden death';
+    if (S.series){
+      var sw = seriesWins();
+      label = 'Game ' + (S.series.idx + 1) + ' of 3 (' + sw[0] + '–' + sw[1] + ') · ' + label;
+    }
+    if (S.mode === 'online') label += ' · ' + S.code;
+    $('kickLabel').textContent = label;
   }
 
   function setControls(mode){
-    // mode: 'pick' | 'wait' | 'none' | 'next' | 'over'
+    // mode: 'pick' | 'wait' | 'none' | 'next' | 'nextgame' | 'over'
     $('picks').hidden = mode !== 'pick';
     $('role').hidden = mode !== 'pick';
     $('waitbar').hidden = mode !== 'wait';
     $('nextBtn').hidden = mode !== 'next';
+    $('nextGameBtn').hidden = mode !== 'nextgame';
     $('rematchBtn').hidden = mode !== 'over';
+    $('reacts').hidden = !(S && S.mode === 'online');
+    if (mode !== 'pick') stopTimer();
+  }
+
+  function setPickButtons(rps){
+    Array.prototype.forEach.call(document.querySelectorAll('.pick'), function(b, i){
+      b.querySelector('i').textContent = rps ? RPS_ICON[i] : PEN_PICKS[i][0];
+      b.querySelector('span').textContent = rps ? SIGN[i] : PEN_PICKS[i][1];
+    });
+    $('nextBtn').textContent = rps ? 'Next round' : 'Next kick';
   }
 
   function setPhase(p){
     S.phase = p;
-    var who = p === 'pickShot' ? shooter() : keeper();
+    var who = p === 'pickShot' ? shooter() : p === 'pickKeep' ? keeper() : (S.mode === 'local' ? S.rpsTurn : S.me);
+    if (S.mode === 'cpu' && p === 'pickRps') who = 0;
     $('role').style.background = KIT[who];
+    setPickButtons(p === 'pickRps');
     if (p === 'pickShot'){
       $('roleIcon').innerHTML = ICON_BALL;
       $('roleTitle').textContent = isMe(who) ? 'You’re shooting' : name(who) + ' shoots';
       $('roleSub').textContent = 'Pick where to aim the ball.';
-    } else {
+    } else if (p === 'pickKeep'){
       $('roleIcon').innerHTML = ICON_GLOVE;
       $('roleTitle').textContent = isMe(who) ? 'You’re in goal' : name(who) + ' in goal';
       $('roleSub').textContent = 'Pick where to dive.';
+    } else {
+      $('roleIcon').innerHTML = ICON_HAND;
+      $('roleTitle').textContent = isMe(who) ? 'Your throw' : name(who) + '’s throw';
+      $('roleSub').textContent = 'Pick rock, paper or scissors.';
     }
     setControls('pick');
+    if (S.mode === 'online') startTimer();
   }
+
+  /* ---------- 10-second pick timer (online only) ---------- */
+  var Tm = {id:null, end:0, ticked:0};
+  function startTimer(){
+    stopTimer();
+    Tm.end = performance.now() + TIMER_S * 1000; Tm.ticked = 0;
+    $('roleTimer').hidden = false;
+    Tm.id = setInterval(function(){
+      var left = (Tm.end - performance.now()) / 1000;
+      $('roleTimerBar').style.width = Math.max(0, left / TIMER_S * 100) + '%';
+      if (left <= 3 && left > 0 && Math.ceil(left) !== Tm.ticked){ Tm.ticked = Math.ceil(left); SFX.tick(); }
+      if (left <= 0){ stopTimer(); onPick(rand(), true); }
+    }, 100);
+  }
+  function stopTimer(){ if (Tm.id){ clearInterval(Tm.id); Tm.id = null; } $('roleTimer').hidden = true; }
 
   function showWait(title, sub){
     $('waitTitle').textContent = title;
@@ -832,41 +1267,59 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     setControls('none');
     $('handTitle').textContent = 'Pass to ' + name(p);
     $('handTitle').style.color = KIT[p];
-    $('handSub').textContent = role === 'shoot'
-      ? 'You’re shooting this kick. Keep your pick hidden.'
-      : 'You’re in goal. Don’t let the shooter see your pick.';
+    $('handSub').textContent = role === 'shoot' ? 'You’re shooting this kick. Keep your pick hidden.'
+      : role === 'keep' ? 'You’re in goal. Don’t let the shooter see your pick.'
+      : 'Your throw. Keep it hidden from ' + name(1 - p) + '.';
     $('handBtn').textContent = 'I’m ' + name(p);
     $('handBtn').style.background = KIT[p];
     $('handoff').hidden = false;
     $('handBtn').onclick = function(){
       $('handoff').hidden = true;
-      setPhase(role === 'shoot' ? 'pickShot' : 'pickKeep');
+      if (role === 'rps'){ S.rpsTurn = p; setPhase('pickRps'); }
+      else setPhase(role === 'shoot' ? 'pickShot' : 'pickKeep');
     };
   }
 
-  function beginKick(){
-    A.playing = false; A.plan = null; A.done = true;
-    $('flash').hidden = true;
-    S.shot = null; S.dive = null; S.phase = null;
+  function flash(big, color, small){
+    $('flashBig').textContent = big;
+    $('flashBig').style.color = color;
+    $('flashSmall').textContent = small || '';
+    $('flash').hidden = false;
+  }
+
+  function beginTurn(){
+    stopTimer();
+    A.playing = false; A.plan = null; A.rps = null; A.done = true; A.ev = [];
+    $('flash').hidden = true; $('skipHint').hidden = true;
+    S.shot = null; S.dive = null; S.pa = null; S.pb = null; S.phase = null;
+    setPickButtons(S.game === 'rps');
     var w = winner();
     renderBoard(w !== null);
-    if (w !== null){ showFinal(w, null); return; }
+    if (w !== null){ finishGame(w, null); return; }
+    if (S.mode === 'online'){ netStep(); return; }
+    if (S.game === 'rps'){
+      if (S.mode === 'cpu') setPhase('pickRps'); else showHandoff(0, 'rps');
+      return;
+    }
     if (S.mode === 'cpu'){
       if (shooter() === 0) setPhase('pickShot');
       else { S.shot = rand(); setPhase('pickKeep'); }
-    } else if (S.mode === 'online'){
-      netStep();
     } else {
       showHandoff(shooter(), 'shoot');
     }
   }
 
-  function onPick(z){
+  function onPick(z, auto){
+    stopTimer();
     if (S.mode === 'online'){
-      if (S.phase === 'pickShot' || S.phase === 'pickKeep') netCommit(z);
+      if (S.phase === 'pickShot' || S.phase === 'pickKeep' || S.phase === 'pickRps') netCommit(z, auto);
       return;
     }
-    if (S.phase === 'pickShot'){
+    if (S.phase === 'pickRps'){
+      if (S.mode === 'cpu'){ S.pa = z; S.pb = rand(); reveal(); }
+      else if (S.rpsTurn === 0){ S.pa = z; showHandoff(1, 'rps'); }
+      else { S.pb = z; reveal(); }
+    } else if (S.phase === 'pickShot'){
       S.shot = z;
       if (S.mode === 'cpu'){ S.dive = rand(); reveal(); }
       else showHandoff(keeper(), 'keep');
@@ -876,61 +1329,118 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     }
   }
 
-  function showFinal(w, lastGoal){
-    var r = tally(), big = $('flashBig');
-    big.textContent = S.mode === 'cpu' ? (w === 0 ? 'You win!' : 'Computer wins')
-      : isMe(w) ? 'You win!' : name(w) + ' wins!';
-    big.style.color = KIT[w];
-    $('flashSmall').textContent = (lastGoal === null ? '' : (lastGoal ? 'Goal' : 'Saved') + ' to finish it. ') +
-      'Final score ' + r.g[0] + '–' + r.g[1] + (S.kicks.length > 10 ? ' after sudden death.' : '.');
-    $('flash').hidden = false;
+  function reveal(){
+    S.phase = 'reveal';
+    setControls('none');
+    $('skipHint').hidden = false;
+    if (S.game === 'rps'){
+      var a = S.pa, b = S.pb, w = rpsBeats(a, b);
+      A.plan = null; A.rps = {a:a, b:b, w:w}; A.resultT = RPS_RESULT_T;
+      schedule([
+        [0.0, SFX.thump], [PUMP, SFX.thump], [PUMP * 2, SFX.thump],
+        [RPS_REVEAL, function(){ SFX.snap(); buzz(25); }],
+        [RPS_REVEAL + 0.45, function(){ if (w === null) SFX.draw(); else SFX.win(); }, true]
+      ]);
+      A.onDone = function(){
+        S.kicks.push({a:a, b:b, w:w});
+        var line = w === null ? 'Both threw ' + SIGN[a] + '. Round replayed.' : SIGN[w === 0 ? a : b] + ' beats ' + SIGN[w === 0 ? b : a] + '.';
+        afterTurn(w === null ? 'Draw' : (isMe(w) ? 'You win the round' : name(w) + ' wins the round'), w === null ? '#eef3ea' : KIT[w], line.charAt(0).toUpperCase() + line.slice(1));
+      };
+    } else {
+      var shot = S.shot, dive = S.dive, goal = shot !== dive, shooterP = shooter();
+      A.rps = null; A.plan = makePlan(shot, dive); A.resultT = RESULT_T;
+      schedule([
+        [0.05, SFX.whistle],
+        [TC, function(){ SFX.kick(); buzz(20); }],
+        [TC + TF, function(){ if (goal){ SFX.net(); SFX.cheer(); buzz([30, 40, 60]); } else { SFX.glove(); SFX.groan(); buzz(40); } }, true]
+      ]);
+      A.onDone = function(){
+        S.kicks.push({shooter: shooterP, goal: goal, shot: shot, dive: dive});
+        afterTurn(goal ? 'Goal!' : 'Saved!', goal ? KIT[shooterP] : KIT[1 - shooterP], SHOT_TXT[shot] + ', ' + DIVE_TXT[dive] + '.');
+      };
+    }
+    A.playing = true; A.done = false;
+    A.start = performance.now() - (REDUCED ? A.resultT * 1000 : 0);
+  }
+
+  function afterTurn(big, color, small){
+    var w = winner();
+    renderBoard(w !== null);
+    if (w === null){
+      flash(big, color, small);
+      S.phase = 'result';
+      setControls('next');
+      $('nextBtn').focus({preventScroll:true});
+    } else {
+      finishGame(w, small);
+    }
+  }
+
+  function winLine(p){ return S.mode === 'cpu' ? (p === 0 ? 'You win!' : 'Computer wins') : isMe(p) ? 'You win!' : name(p) + ' wins!'; }
+  function scoreLine(){
+    if (S.game === 'rps'){ var w = rpsWins(); return 'Final score ' + w[0] + '–' + w[1] + '.'; }
+    var r = tally();
+    return 'Final score ' + r.g[0] + '–' + r.g[1] + (S.kicks.length > 10 || S.game === 'pensd' ? ' after sudden death.' : '.');
+  }
+
+  function finishGame(w, lastLine){
+    if (S.series){
+      S.series.results[S.series.idx] = w;
+      var sw = seriesWins();
+      if (sw[0] === 2 || sw[1] === 2){
+        var sWin = sw[0] === 2 ? 0 : 1;
+        recordResult('mix', sWin);
+        flash(S.mode === 'cpu' ? (sWin === 0 ? 'You win the duel!' : 'Computer wins the duel') : (isMe(sWin) ? 'You win the duel!' : name(sWin) + ' wins the duel!'),
+              KIT[sWin], 'Mixed Duel ' + sw[0] + '–' + sw[1] + '. Last game: ' + GAME_NAME[S.game] + ', ' + scoreLine().toLowerCase());
+        S.phase = 'over'; setControls('over');
+      } else {
+        var nextG = SERIES[S.series.idx + 1];
+        flash((isMe(w) ? 'You take' : name(w) + ' takes') + ' game ' + (S.series.idx + 1), KIT[w],
+              GAME_NAME[S.game] + ': ' + scoreLine().replace('Final score ', '').replace('.', '') + '. Duel ' + sw[0] + '–' + sw[1] + '.');
+        $('nextGameBtn').textContent = 'Next: ' + GAME_NAME[nextG];
+        S.phase = 'subover'; setControls('nextgame');
+      }
+      return;
+    }
+    recordResult(S.game === 'pensd' ? 'pen' : S.game, w);
+    flash(winLine(w), KIT[w], (lastLine ? lastLine + ' ' : '') + scoreLine());
     S.phase = 'over';
     setControls('over');
   }
 
-  function reveal(){
-    S.phase = 'reveal';
-    setControls('none');
-    var shot = S.shot, dive = S.dive, goal = shot !== dive;
-    A.plan = makePlan(shot, dive);
-    A.playing = true; A.done = false;
-    A.start = performance.now() - (REDUCED ? RESULT_T * 1000 : 0);
-    A.onDone = function(){
-      var shooterP = shooter();
-      S.kicks.push({shooter: shooterP, goal: goal, shot: shot, dive: dive});
-      var w = winner();
-      renderBoard(w !== null);
-      if (w === null){
-        var big = $('flashBig');
-        big.textContent = goal ? 'Goal!' : 'Saved!';
-        big.style.color = goal ? KIT[shooterP] : KIT[1 - shooterP];
-        $('flashSmall').textContent = SHOT_TXT[shot] + ', ' + DIVE_TXT[dive] + '.';
-        $('flash').hidden = false;
-        S.phase = 'result';
-        setControls('next');
-        $('nextBtn').focus({preventScroll:true});
-      } else {
-        showFinal(w, goal);
-      }
-    };
+  function startSub(idx){
+    S.series.idx = idx;
+    S.game = SERIES[idx];
+    S.kicks = [];
+    beginTurn();
+  }
+
+  function namesFor(mode){
+    var me = nick();
+    return mode === 'cpu' ? [me || 'You', 'Computer'] : ['Blue', 'Orange'];
+  }
+
+  function start(mode){
+    var kind = HUB.game;
+    S = {mode: mode, kind: kind, names: namesFor(mode), kicks: [], phase: null,
+         matchId: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)};
+    if (kind === 'mix'){ S.series = {idx: 0, results: []}; S.game = 'pen'; }
+    else S.game = kind;
+    showScreen('game');
+    ambience(true);
+    beginTurn();
   }
 
   function showScreen(id){
     ['menu', 'lobby', 'game'].forEach(function(s){ $(s).hidden = s !== id; });
-  }
-
-  function start(mode){
-    S = {
-      mode: mode,
-      names: mode === 'cpu' ? ['You', 'Computer'] : ['Blue', 'Orange'],
-      kicks: [], shot: null, dive: null, phase: null
-    };
-    showScreen('game');
-    beginKick();
+    tgBack(id !== 'menu');
+    if (id !== 'game') ambience(false);
+    if (id === 'menu') renderHub();
   }
 
   function toMenu(){
-    A.playing = false; A.plan = null;
+    A.playing = false; A.plan = null; A.rps = null;
+    stopTimer();
     if (S && S.mode === 'online'){ netDetach(); forget(); }
     S = null;
     $('handoff').hidden = true;
@@ -939,293 +1449,417 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
   }
 
   /* =====================================================================
-     ONLINE PLAY
-     Each match lives in the page's shared database:
-       matches/<CODE>               who the two players are, which game of the match
-       matches/<CODE>/seats/<0|1>   each player's sealed picks and, later, the reveals
-       data/users/<id>/<CODE>-<seat> your own picks (private to you) so a reload can't lose them
-     Picks are sealed: you publish a fingerprint (SHA-256 of pick + random salt) first,
-     and only reveal the pick once both players have locked in. Nobody can peek or change their mind.
+     NICKNAME + STATS
+     Nickname: typed once, remembered on this device. (In Telegram it will be
+     prefilled from the Telegram name and confirmed once.)
+     Stats: win rate and streaks for games vs the computer and online.
+     Saved in your private space in the page's database when available,
+     otherwise on this device.
      ===================================================================== */
-  var ALPH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  var Net = {init:null, db:null, user:null, uid:null, code:null, seat:null, match:null,
-             seats:[null, null], priv:{}, privRef:null, unsubs:[], q:Promise.resolve(), revealing:{}, ver:{}};
+  function nick(){ try { return (localStorage.getItem('pd-nick') || '').slice(0, 12); } catch (e) { return ''; } }
+  function setNick(v){ try { localStorage.setItem('pd-nick', v.trim().slice(0, 12)); } catch (e) {} }
+  var editingNick = false;
+
+  function renderWho(){
+    var w = $('who'), n = nick();
+    w.innerHTML = '';
+    if (!n || editingNick){
+      var lab = document.createElement('label'); lab.htmlFor = 'nickIn'; lab.textContent = 'What should we call you?';
+      var row = document.createElement('div'); row.className = 'nickrow';
+      var inp = document.createElement('input'); inp.id = 'nickIn'; inp.maxLength = 12; inp.placeholder = 'Alex'; inp.autocomplete = 'nickname'; inp.value = n;
+      var btn = document.createElement('button'); btn.textContent = 'Save'; btn.type = 'button';
+      var save = function(){ var v = inp.value.trim(); if (!v){ inp.focus(); return; } setNick(v); editingNick = false; renderWho(); renderCpuSub(); };
+      btn.onclick = save;
+      inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') save(); });
+      row.appendChild(inp); row.appendChild(btn);
+      w.appendChild(lab); w.appendChild(row);
+    } else {
+      var s = document.createElement('span'); s.textContent = 'Playing as ';
+      var b = document.createElement('b'); b.textContent = n;
+      var ch = document.createElement('button'); ch.className = 'link'; ch.type = 'button'; ch.textContent = 'Change';
+      ch.onclick = function(){ editingNick = true; renderWho(); var i = $('nickIn'); if (i) i.focus(); };
+      w.appendChild(s); w.appendChild(b); w.appendChild(ch);
+    }
+  }
+  function renderCpuSub(){
+    $('cpuSub').textContent = HUB.game === 'rps' ? 'First to 3 rounds. You’re blue.' : HUB.game === 'mix' ? 'Best of 3 games. You’re blue.' : 'You wear blue and shoot first.';
+  }
+
+  var Stats = {data:null, ref:null};
+  function emptyStats(){ var z = function(){ return {w:0, l:0, cur:0, best:0}; }; return {all:z(), pen:z(), rps:z(), mix:z(), seen:[]}; }
+  function cloudOk(){ return tgOk('6.9') && TG.CloudStorage; }
+  function saveCloudStats(){ if (!cloudOk()) return; try { TG.CloudStorage.setItem('pd-stats', JSON.stringify(Stats.data)); } catch (e) {} }
+  function loadStats(){
+    var d = null;
+    try { d = JSON.parse(localStorage.getItem('pd-stats') || 'null'); } catch (e) {}
+    Stats.data = d && d.all ? d : emptyStats();
+    if (!cloudOk()) return;
+    try {
+      TG.CloudStorage.getItem('pd-stats', function(err, v){
+        var x = null; try { x = v ? JSON.parse(v) : null; } catch (e) {}
+        if (x && x.all){
+          Stats.data = x;
+          try { localStorage.setItem('pd-stats', v); } catch (e) {}
+          renderStats();
+        } else if (Stats.data.all.w + Stats.data.all.l > 0) saveCloudStats();
+      });
+    } catch (e) {}
+  }
+  function bumpRec(rec, won){
+    if (won){ rec.w++; rec.cur++; rec.best = Math.max(rec.best, rec.cur); } else { rec.l++; rec.cur = 0; }
+  }
+  // Count a finished match once, only when you were one of the players (vs computer or online).
+  function recordResult(kind, w){
+    if (!S || (S.mode !== 'cpu' && S.mode !== 'online')) return;
+    var key = S.mode === 'online' ? S.code + ':' + (S.series ? 's' + S.seriesStart : 'g' + S.gnum) : S.matchId;
+    var d = Stats.data || emptyStats();
+    if (d.seen.indexOf(key) >= 0) return;
+    d.seen.push(key); if (d.seen.length > 60) d.seen = d.seen.slice(-60);
+    var won = isMe(w);
+    bumpRec(d[kind], won); bumpRec(d.all, won);
+    Stats.data = d;
+    try { localStorage.setItem('pd-stats', JSON.stringify(d)); } catch (e) {}
+    saveCloudStats();
+  }
+  function pct(r){ var n = r.w + r.l; return n ? Math.round(r.w / n * 100) + '%' : '–'; }
+  function renderStats(){
+    var d = Stats.data || emptyStats(), a = d.all, el = $('stats');
+    el.innerHTML = '';
+    var h = document.createElement('h3'); h.textContent = 'Your record'; el.appendChild(h);
+    if (a.w + a.l === 0){
+      var p = document.createElement('p'); p.style.margin = '0'; p.style.color = 'var(--muted)'; p.style.fontSize = '15px';
+      p.textContent = 'Win rate and streaks show up here after your first game vs the computer or a friend online.';
+      el.appendChild(p); return;
+    }
+    var tiles = document.createElement('div'); tiles.className = 'tiles';
+    [[a.w + a.l, 'Played'], [pct(a), 'Win rate'], [a.cur, 'Streak'], [a.best, 'Best streak']].forEach(function(t){
+      var x = document.createElement('div'); x.className = 'tile';
+      var b = document.createElement('b'); b.textContent = t[0];
+      var s = document.createElement('span'); s.textContent = t[1];
+      x.appendChild(b); x.appendChild(s); tiles.appendChild(x);
+    });
+    el.appendChild(tiles);
+    [['pen', 'Penalty Duel'], ['rps', 'Rock Paper Scissors'], ['mix', 'Mixed Duel']].forEach(function(g){
+      var r = d[g[0]]; if (r.w + r.l === 0) return;
+      var row = document.createElement('div'); row.className = 'srow';
+      [g[1], r.w + '–' + r.l + ' · ' + pct(r), 'Streak ' + r.cur].forEach(function(txt){ var s = document.createElement('span'); s.textContent = txt; row.appendChild(s); });
+      el.appendChild(row);
+    });
+  }
+
+  function renderHub(){
+    Array.prototype.forEach.call(document.querySelectorAll('.game'), function(b){
+      b.setAttribute('aria-checked', b.dataset.game === HUB.game ? 'true' : 'false');
+    });
+    renderWho(); renderCpuSub(); renderStats();
+  }
+
+  /* ---------- quick reactions (online) ---------- */
+  var lastReact = 0;
+  function showBubble(p, text){
+    var el = document.createElement('div');
+    el.className = 'bubble ' + (p === 0 ? 'l' : 'r');
+    el.style.background = KITC[p];
+    el.textContent = (isMe(p) ? 'You' : name(p)) + ': ' + text;
+    $('stage').appendChild(el);
+    SFX.pop();
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 2700);
+  }
+  function sendReact(text){
+    var now = Date.now();
+    if (!S || S.mode !== 'online' || now - lastReact < 1500) return;
+    lastReact = now;
+    api('react', {code: Net.code, seat: S.me, text: text}).catch(function(){});
+    showBubble(S.me, text);
+  }
+
+  /* =====================================================================
+     ONLINE PLAY (Telegram + Supabase server)
+     The game talks to our own small server ("duel" function on Supabase):
+       - every request carries Telegram's signed login, checked on the server
+       - picks go to the server and stay secret until both players picked
+       - the server then publishes the turn (both picks) in table "turns"
+     The page reads three public tables and gets live updates:
+       matches  code, names, kind (pen | rps | mix), game counter, series_start, react0/react1
+       locks    who has locked in a pick for turn n (no pick inside)
+       turns    finished kicks / rounds: p0 = blue's pick, p1 = orange's pick
+     Online play only works inside Telegram (the server needs the Telegram login).
+     ===================================================================== */
+  var SB_URL = 'https://nlkbnoinoowpobvjmfgn.supabase.co';
+  var SB_KEY = 'sb_publishable_WZ8HtvzQuuylVeM9vwFngQ_2Rnz0U6O';
+  var FN_URL = SB_URL + '/functions/v1/duel';
+  var BOT_APP = 'https://t.me/the_duelist_bot/play';
+  var Net = {init:null, sb:null, ch:null, code:null, seat:null, match:null, turns:{}, locks:{},
+             reactSeen:[0, 0], poll:null, gen:0};
   var NET_MSG = {
-    none: 'Online play is coming soon. For now, try vs computer or 2 players on one phone.',
-    signedout: 'Sign in to Claude to play online.',
-    readonly: 'You can open this page but can’t play online yet. Ask the person who shared it to invite you as an Editor.'
+    none: 'Online play works in Telegram. Open the game at t.me/the_duelist_bot/play.',
+    offline: 'Couldn’t reach the game server. Check your connection and try again.'
   };
 
   function netReady(){
     if (Net.init) return Net.init;
-    Net.init = (async function(){
-      if (!window.claude || !window.claude.use) return 'none';
-      var got = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-      if (!got[0] || !got[1]) return 'none';
-      Net.db = got[0]; Net.user = got[1];
-      Net.uid = await Net.user.id();
-      if (!Net.uid) return 'signedout';
-      var can = await Net.user.can('data.write');
-      return can === false ? 'readonly' : 'ok';
-    })().catch(function(){ return 'none'; });
+    Net.init = Promise.resolve().then(function(){
+      if (!TG) return 'none';
+      if (!window.supabase || !window.supabase.createClient) return 'offline';
+      Net.sb = window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: false, autoRefreshToken: false}});
+      return 'ok';
+    }).catch(function(){ return 'offline'; });
     return Net.init;
+  }
+
+  // One call to our server. Resolves with its answer, or fails with a readable message.
+  function api(action, body){
+    var payload = Object.assign({action: action, initData: TG ? TG.initData : ''}, body || {});
+    return fetch(FN_URL, {method: 'POST', headers: {'Content-Type': 'application/json', 'apikey': SB_KEY}, body: JSON.stringify(payload)})
+      .then(function(r){
+        return r.json().catch(function(){ return {}; }).then(function(d){
+          if (!r.ok || d.error){ var e = new Error(d.message || NET_MSG.offline); e.code = d.error || 'http'; throw e; }
+          return d;
+        });
+      }, function(){ var e = new Error(NET_MSG.offline); e.code = 'offline'; throw e; });
   }
 
   function remember(code, seat){ try { localStorage.setItem('pd-match', JSON.stringify({code:code, seat:seat})); } catch (e) {} }
   function recall(){ try { return JSON.parse(localStorage.getItem('pd-match') || 'null'); } catch (e) { return null; } }
   function forget(){ try { localStorage.removeItem('pd-match'); } catch (e) {} }
-
-  function write(fn){ Net.q = Net.q.catch(function(){}).then(fn); return Net.q; }
-  function key(n){ return (Net.match && Net.match.game || 0) + '_' + n; }
-
-  async function sha(s){
-    if (window.crypto && crypto.subtle && window.TextEncoder){
-      var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-      return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0' + x.toString(16)).slice(-2); }).join('');
-    }
-    var h = 0; for (var i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-    return 'h' + h;
-  }
-  function newSalt(){
-    var a = new Uint32Array(4);
-    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
-    else for (var i = 0; i < 4; i++) a[i] = Math.random() * 4294967296;
-    return Array.prototype.join.call(a, '-');
-  }
+  function lockKey(g, n){ return g + '_' + n; }
+  function inviteLink(code){ return BOT_APP + '?startapp=' + code; }
 
   function lobbyErr(msg){ $('lobbyErr').textContent = msg || ''; }
   function setLobbyBusy(b){ $('createBtn').disabled = b; $('joinBtn').disabled = b; }
 
-  function openLobby(prefill){
+  function openLobby(prefill, autoJoin){
+    if (!nick()){ editingNick = true; showScreen('menu'); var i = $('nickIn'); if (i){ i.focus(); i.placeholder = 'Pick a name first'; } return; }
     showScreen('lobby');
+    $('lobbyGame').textContent = GAME_NAME[HUB.game];
     $('lobbyForm').hidden = false; $('waitBox').hidden = true;
     lobbyErr('');
-    try { $('nick').value = $('nick').value || localStorage.getItem('pd-nick') || ''; } catch (e) {}
     if (prefill) $('codeIn').value = prefill;
     setLobbyBusy(true);
     netReady().then(function(st){
       setLobbyBusy(st !== 'ok');
-      if (st !== 'ok') lobbyErr(NET_MSG[st]);
+      if (st !== 'ok'){ lobbyErr(NET_MSG[st]); return; }
+      if (autoJoin && prefill) joinMatch();
     });
   }
 
-  function nick(){
-    var v = ($('nick').value || '').trim().slice(0, 12);
-    try { localStorage.setItem('pd-nick', v); } catch (e) {}
-    return v;
-  }
-
-  async function createMatch(){
+  function createMatch(){
     lobbyErr(''); setLobbyBusy(true);
-    try {
-      var nm = nick();
-      for (var tries = 0; tries < 6; tries++){
-        var code = '';
-        for (var i = 0; i < 4; i++) code += ALPH[Math.floor(Math.random() * ALPH.length)];
-        var ref = Net.db.doc('matches/' + code);
-        if ((await ref.get()).exists) continue;
-        await ref.set({host: Net.uid, hostName: nm, guest: null, guestName: '', game: 0, created: Date.now()});
-        await Net.db.doc('matches/' + code + '/seats/0').set({commits: {}, reveals: {}});
-        remember(code, 0);
-        netAttach(code, 0);
-        return;
-      }
-      lobbyErr('Couldn’t make a free code. Try again.');
-    } catch (e) {
-      lobbyErr(e && e.code === 'invalid_argument' ? NET_MSG.readonly : 'Couldn’t create the match. Check your connection and try again.');
-    }
-    setLobbyBusy(false);
+    api('create', {kind: HUB.game, name: nick()}).then(function(d){
+      remember(d.code, d.seat);
+      netAttach(d.code, d.seat);
+    }).catch(function(e){ lobbyErr(e.message); setLobbyBusy(false); });
   }
 
-  async function joinMatch(){
+  function joinMatch(){
     lobbyErr('');
     var code = ($('codeIn').value || '').trim().toUpperCase();
     if (!/^[A-Z0-9]{4}$/.test(code)){ lobbyErr('Enter the 4-character code your friend sent you.'); return; }
     setLobbyBusy(true);
-    try {
-      var nm = nick();
-      var ref = Net.db.doc('matches/' + code), snap = await ref.get();
-      if (!snap.exists){ lobbyErr('No match found with code ' + code + '. Check it with your friend.'); setLobbyBusy(false); return; }
-      var d = snap.data();
-      if (!d.guest){
-        var lease = await ref.acquire({holder: Net.uid + ':' + Math.random().toString(36).slice(2), ttlMs: 4000});
-        if (!lease.acquired){ lobbyErr('Someone is joining this match right now. Try again in a few seconds.'); setLobbyBusy(false); return; }
-        d = (await ref.get()).data();
-        if (!d.guest){
-          await ref.update({guest: Net.uid, guestName: nm});
-          var sref = Net.db.doc('matches/' + code + '/seats/1');
-          if (!(await sref.get()).exists) await sref.set({commits: {}, reveals: {}});
-          remember(code, 1);
-          netAttach(code, 1);
-          return;
-        }
-      }
-      var mem = recall();
-      if (mem && mem.code === code && (mem.seat === 0 ? d.host : d.guest) === Net.uid){ netAttach(code, mem.seat); return; }
-      if (d.guest === Net.uid){ remember(code, 1); netAttach(code, 1); return; }
-      if (d.host === Net.uid){ remember(code, 0); netAttach(code, 0); return; }
-      lobbyErr('That match already has two players.');
-    } catch (e) {
-      lobbyErr(e && e.code === 'invalid_argument' ? NET_MSG.readonly : 'Couldn’t join the match. Check your connection and try again.');
-    }
-    setLobbyBusy(false);
+    var mem = recall(), hint = mem && mem.code === code ? mem.seat : undefined;
+    api('join', {code: code, name: nick(), seat: hint}).then(function(d){
+      remember(d.code, d.seat);
+      netAttach(d.code, d.seat);
+    }).catch(function(e){ lobbyErr(e.message); setLobbyBusy(false); });
   }
 
   function netDetach(){
-    Net.unsubs.forEach(function(u){ try { u(); } catch (e) {} });
-    Net.unsubs = [];
-    Net.code = null; Net.match = null;
+    Net.gen++;
+    if (Net.ch && Net.sb){ try { Net.sb.removeChannel(Net.ch); } catch (e) {} }
+    Net.ch = null;
+    if (Net.poll){ clearInterval(Net.poll); Net.poll = null; }
+    Net.code = null; Net.match = null; Net.turns = {}; Net.locks = {};
+  }
+
+  function addTurn(t){
+    if (!t || typeof t.game !== 'number') return;
+    (Net.turns[t.game] = Net.turns[t.game] || [])[t.n] = t;
+  }
+  function addLock(l){
+    if (!l || typeof l.game !== 'number') return;
+    var k = lockKey(l.game, l.n);
+    (Net.locks[k] = Net.locks[k] || [false, false])[l.seat] = true;
+  }
+
+  // Load the whole match fresh (on join, after reconnecting, and as a safety net).
+  function refetch(){
+    var code = Net.code, gen = Net.gen;
+    if (!code || !Net.sb) return Promise.resolve();
+    return Promise.all([
+      Net.sb.from('matches').select('*').eq('code', code).maybeSingle(),
+      Net.sb.from('turns').select('game, n, p0, p1').eq('code', code),
+      Net.sb.from('locks').select('game, n, seat').eq('code', code)
+    ]).then(function(r){
+      if (gen !== Net.gen) return;
+      if (r[0].error || r[1].error || r[2].error) throw new Error('read');
+      Net.match = r[0].data;
+      Net.turns = {}; (r[1].data || []).forEach(addTurn);
+      Net.locks = {}; (r[2].data || []).forEach(addLock);
+      onNet();
+    }).catch(function(){ if (gen === Net.gen) netErr(); });
   }
 
   function netAttach(code, seat){
     netDetach();
-    Net.code = code; Net.seat = seat; Net.match = null; Net.seats = [null, null];
-    Net.priv = {}; Net.revealing = {}; Net.ver = {};
-    Net.privRef = Net.db.doc('data/users/' + Net.uid + '/' + code + '-' + seat);
-    Net.privRef.get().then(function(s){
-      if (s.exists) Net.priv = Object.assign({}, s.data().picks || {}, Net.priv);
-      onNet();
-    }).catch(function(){});
-    Net.unsubs.push(Net.db.doc('matches/' + code).onSnapshot(function(s){
-      Net.match = s.exists ? s.data() : null; onNet();
-    }, netErr));
-    Net.unsubs.push(Net.db.collection('matches/' + code + '/seats').onSnapshot(function(q){
-      q.docs.forEach(function(d){ if (d.id === '0' || d.id === '1') Net.seats[Number(d.id)] = d.data(); });
-      onNet();
-    }, netErr));
+    var gen = Net.gen;
+    Net.code = code; Net.seat = seat; Net.reactSeen = [Date.now(), Date.now()];
+    var f = 'code=eq.' + code;
+    Net.ch = Net.sb.channel('match-' + code + '-' + gen)
+      .on('postgres_changes', {event: '*', schema: 'public', table: 'matches', filter: f}, function(p){
+        if (gen === Net.gen && p.new && p.new.code){ Net.match = p.new; onNet(); }
+      })
+      .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'turns', filter: f}, function(p){
+        if (gen === Net.gen){ addTurn(p.new); onNet(); }
+      })
+      .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'locks', filter: f}, function(p){
+        if (gen === Net.gen){ addLock(p.new); onNet(); }
+      })
+      .subscribe(function(status){
+        if (gen !== Net.gen) return;
+        if (status === 'SUBSCRIBED') refetch();
+      });
+    // Safety net: if a live update is ever missed (phone asleep, weak signal), catch up every few seconds.
+    Net.poll = setInterval(function(){ if (gen === Net.gen && document.visibilityState !== 'hidden') refetch(); }, 5000);
+    refetch();
     $('codeShow').textContent = code;
+    $('lobbyGame').textContent = GAME_NAME[HUB.game];
     $('lobbyForm').hidden = true; $('waitBox').hidden = false;
     setLobbyBusy(false);
   }
 
   function netErr(){
-    var msg = 'Lost the connection to the match. Go back to the menu and join again with code ' + (Net.code || '') + '.';
-    if (S && S.mode === 'online') showWait('Connection lost', msg);
+    var msg = 'Connection problem. Trying again… If it doesn’t come back, go to the menu and join again with code ' + (Net.code || '') + '.';
+    if (S && S.mode === 'online'){ if (S.phase === 'wait' || S.phase === 'sending') $('waitSub').textContent = msg; }
     else lobbyErr(msg);
   }
 
   function netNames(){
     var m = Net.match || {};
-    var n = [m.hostName || 'Blue', m.guestName || 'Orange'];
-    n[Net.seat] = 'You';
-    return n;
+    return [m.host_name || 'Blue', m.guest_name || 'Orange'];
   }
 
-  // Did this reveal match the fingerprint locked in earlier? (async, cached)
-  function verified(seat, k, rv, commit){
-    var id = seat + '|' + k;
-    if (Net.ver[id] === undefined){
-      Net.ver[id] = null;
-      sha(rv.pick + ':' + rv.salt).then(function(h){ Net.ver[id] = h === commit; onNet(); });
-    }
-    return Net.ver[id];
+  function typeOf(g){
+    var m = Net.match || {}, kind = m.kind || 'pen';
+    if (kind !== 'mix') return kind;
+    return SERIES[Math.max(0, Math.min(2, g - (m.series_start || 0)))];
   }
 
-  // Kicks both players have revealed, in order.
-  function resolved(){
-    var out = [], a = Net.seats[0], b = Net.seats[1];
-    if (!a || !b) return out;
-    for (var n = 0; n < 200; n++){
-      var k = key(n), ra = (a.reveals || {})[k], rb = (b.reveals || {})[k];
-      if (!ra || !rb) break;
-      var va = verified(0, k, ra, (a.commits || {})[k]), vb = verified(1, k, rb, (b.commits || {})[k]);
-      if (va === null || vb === null) break;
-      var pa = va && [0,1,2].indexOf(ra.pick) >= 0 ? ra.pick : null;
-      var pb = vb && [0,1,2].indexOf(rb.pick) >= 0 ? rb.pick : null;
-      var sh = n % 2, shot = sh === 0 ? pa : pb, dive = sh === 0 ? pb : pa;
-      if (shot === null) shot = dive === null ? 0 : dive;       // a bad shooter reveal is saved
-      if (dive === null) dive = (shot + 1) % 3;                  // a bad keeper reveal concedes
-      out.push({shooter: sh, shot: shot, dive: dive, goal: shot !== dive});
+  // Everything both players have picked in game g, in order: kicks or RPS rounds.
+  function resolvedFor(g){
+    var out = [], list = Net.turns[g] || [], type = typeOf(g);
+    for (var n = 0; n < list.length && list[n]; n++){
+      var p0 = list[n].p0, p1 = list[n].p1;
+      if (type === 'rps') out.push({a: p0, b: p1, w: rpsBeats(p0, p1)});
+      else {
+        var sh = n % 2, shot = sh === 0 ? p0 : p1, dive = sh === 0 ? p1 : p0;
+        out.push({shooter: sh, shot: shot, dive: dive, goal: shot !== dive});
+      }
     }
     return out;
+  }
+
+  function buildOnline(){
+    var m = Net.match, g = m.game || 0, kind = m.kind || 'pen';
+    HUB.game = kind;
+    S = {mode: 'online', code: Net.code, me: Net.seat, gnum: g, kind: kind, seriesStart: m.series_start || 0,
+         names: netNames(), kicks: [], phase: null};
+    if (kind === 'mix'){ S.series = {idx: g - S.seriesStart, results: []}; refreshSeries(); }
+    S.game = typeOf(g);
+    S.kicks = resolvedFor(g);
+    showScreen('game');
+    ambience(true);
+    beginTurn();
+  }
+  function refreshSeries(){
+    if (!S.series) return;
+    for (var i = S.seriesStart; i < S.gnum; i++) S.series.results[i - S.seriesStart] = winnerOf(typeOf(i), resolvedFor(i));
   }
 
   function onNet(){
     var m = Net.match;
     if (!m || !Net.code) return;
-    if (!m.guest && Net.seat === 0 && !(S && S.mode === 'online')){
+    if (!m.has_guest && !(S && S.mode === 'online')){
       if ($('lobby').hidden) showScreen('lobby');
       $('lobbyForm').hidden = true; $('waitBox').hidden = false;
       return;
     }
-    if (!S || S.mode !== 'online' || S.code !== Net.code){
-      S = {mode: 'online', code: Net.code, me: Net.seat, game: m.game || 0, names: netNames(),
-           kicks: [], shot: null, dive: null, phase: null};
-      S.kicks = resolved().map(function(k){ return {shooter: k.shooter, goal: k.goal, shot: k.shot, dive: k.dive}; });
-      showScreen('game');
-      beginKick();
-      return;
-    }
-    if ((m.game || 0) !== S.game){
-      S.game = m.game || 0; S.kicks = []; Net.revealing = {};
-      beginKick();
-      return;
-    }
+    if (!S || S.mode !== 'online' || S.code !== Net.code || (m.game || 0) !== S.gnum){ buildOnline(); return; }
     var nm = netNames();
     if (nm[0] !== S.names[0] || nm[1] !== S.names[1]){ S.names = nm; renderBoard(S.phase === 'over'); }
-    netMaybeReveal();
-    if (S.phase === 'pickShot' || S.phase === 'pickKeep' || S.phase === 'wait') netStep();
-  }
-
-  // Once both picks are locked in, publish my real pick so both phones can play the kick.
-  function netMaybeReveal(){
-    var me = Net.seats[S.me], opp = Net.seats[1 - S.me];
-    if (!me || !opp) return;
-    var k = key(resolved().length);
-    if ((me.commits || {})[k] && (opp.commits || {})[k] && !(me.reveals || {})[k] && Net.priv[k] && !Net.revealing[k]){
-      Net.revealing[k] = true;
-      var patch = {reveals: {}}; patch.reveals[k] = Net.priv[k];
-      var ref = Net.db.doc('matches/' + Net.code + '/seats/' + S.me);
-      write(function(){ return ref.update(patch); }).catch(function(){ Net.revealing[k] = false; });
+    if (S.series) refreshSeries();
+    // quick reactions from the other player
+    var opp = 1 - S.me, rv = m['react' + opp];
+    if (rv && rv.n > Net.reactSeen[opp]){
+      Net.reactSeen[opp] = rv.n;
+      if (typeof rv.k === 'string') showBubble(opp, rv.k.slice(0, 12));
     }
+    if (S.phase === 'pickShot' || S.phase === 'pickKeep' || S.phase === 'pickRps' || S.phase === 'wait') netStep();
   }
 
   function netStep(){
-    if (S.phase === 'reveal' || S.phase === 'result' || S.phase === 'over' || S.phase === 'sending') return;
-    var n = S.kicks.length, res = resolved();
-    if (res.length > n){ S.shot = res[n].shot; S.dive = res[n].dive; reveal(); return; }
-    var k = key(n), me = Net.seats[S.me] || {}, opp = Net.seats[1 - S.me] || {};
+    if (S.phase === 'reveal' || S.phase === 'result' || S.phase === 'over' || S.phase === 'subover' || S.phase === 'sending') return;
+    var n = S.kicks.length, res = resolvedFor(S.gnum);
+    if (res.length > n){
+      if (S.game === 'rps'){ S.pa = res[n].a; S.pb = res[n].b; }
+      else { S.shot = res[n].shot; S.dive = res[n].dive; }
+      reveal(); return;
+    }
+    var lk = Net.locks[lockKey(S.gnum, n)] || [false, false];
     var oppName = S.names[1 - S.me];
-    if ((me.commits || {})[k]){
+    if (lk[S.me]){
       S.phase = 'wait';
-      showWait('Locked in', (opp.commits || {})[k] ? 'Both picks are in. Revealing…' : 'Waiting for ' + oppName + ' to pick…');
+      showWait('Locked in', lk[1 - S.me] ? 'Both picks are in. Revealing…' : 'Waiting for ' + oppName + ' to pick…');
       return;
     }
-    if (S.phase !== 'pickShot' && S.phase !== 'pickKeep') setPhase(shooter() === S.me ? 'pickShot' : 'pickKeep');
+    if (S.phase !== 'pickShot' && S.phase !== 'pickKeep' && S.phase !== 'pickRps'){
+      setPhase(S.game === 'rps' ? 'pickRps' : shooter() === S.me ? 'pickShot' : 'pickKeep');
+    }
   }
 
-  function netCommit(z){
-    var k = key(S.kicks.length), salt = newSalt(), back = S.phase;
+  function netCommit(z, auto){
+    var n = S.kicks.length, g = S.gnum, back = S.phase;
     S.phase = 'sending';
-    showWait('Locked in', 'Sending your pick…');
-    Net.priv[k] = {pick: z, salt: salt};
-    var seatRef = Net.db.doc('matches/' + Net.code + '/seats/' + S.me);
-    sha(z + ':' + salt).then(function(h){
-      var picks = Object.assign({}, Net.priv);
-      return Net.privRef.set({picks: picks}).then(function(){
-        var patch = {commits: {}}; patch.commits[k] = h;
-        return write(function(){ return seatRef.update(patch); });
-      });
-    }).then(function(){
-      S.phase = 'wait'; onNet();
-    }).catch(function(){
-      delete Net.priv[k];
+    showWait('Locked in', auto ? 'Time’s up. A random pick was sent for you…' : 'Sending your pick…');
+    api('pick', {code: Net.code, seat: S.me, game: g, n: n, pick: z}).then(function(){
+      addLock({game: g, n: n, seat: S.me});
+      if (S && S.phase === 'sending') S.phase = 'wait';
+      onNet();
+    }).catch(function(e){
+      if (!S || S.mode !== 'online') return;
+      if (e.code === 'stale' || e.code === 'over'){ S.phase = 'wait'; refetch(); return; }
       setPhase(back);
-      $('roleSub').textContent = 'Your pick didn’t send. Check your connection and pick again.';
+      $('roleSub').textContent = e.code === 'offline' ? 'Your pick didn’t send. Check your connection and pick again.' : e.message;
     });
   }
 
-  function netRematch(){
-    var g = (S.game || 0) + 1;
-    $('rematchBtn').disabled = true;
-    write(function(){ return Net.db.doc('matches/' + Net.code).update({game: g}); })
-      .catch(function(){})
-      .then(function(){ $('rematchBtn').disabled = false; });
+  function netAdvance(rematch){
+    $('rematchBtn').disabled = true; $('nextGameBtn').disabled = true;
+    api('advance', {code: Net.code, seat: S.me, game: S.gnum, rematch: !!rematch})
+      .then(refetch)
+      .catch(function(e){ flash('Hmm', 'var(--chalk)', e.message); })
+      .then(function(){ $('rematchBtn').disabled = false; $('nextGameBtn').disabled = false; });
+  }
+  function netNextGame(){ netAdvance(false); }
+  function netRematch(){ netAdvance(true); }
+
+  function shareInvite(){
+    var code = $('codeShow').textContent, link = inviteLink(code);
+    var text = 'Duel me in ' + GAME_NAME[HUB.game] + '! Match code ' + code;
+    if (TG && TG.openTelegramLink){
+      TG.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(text));
+    } else {
+      try { navigator.clipboard.writeText(link); } catch (e) {}
+    }
   }
 
-  $('cpuBtn').onclick = function(){ start('cpu'); };
+  /* ---------- wiring ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll('.game'), function(b){
+    b.addEventListener('click', function(){ HUB.game = b.dataset.game; renderHub(); });
+  });
+  function needNick(){ if (nick()) return false; editingNick = true; renderWho(); var i = $('nickIn'); if (i){ i.focus(); i.placeholder = 'Pick a name first'; } return true; }
+  $('cpuBtn').onclick = function(){ if (!needNick()) start('cpu'); };
   $('localBtn').onclick = function(){ start('local'); };
-  $('onlineBtn').onclick = function(){ var m = recall(); openLobby(m ? m.code : ''); };
+  $('onlineBtn').onclick = function(){ if (needNick()) return; var m = recall(); openLobby(m ? m.code : ''); };
   $('createBtn').onclick = createMatch;
   $('joinBtn').onclick = joinMatch;
   $('codeIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') joinMatch(); });
@@ -1239,20 +1873,52 @@ button:focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
     var r = document.createRange(); r.selectNodeContents($('codeShow'));
     var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
   }
-  $('nextBtn').onclick = beginKick;
-  $('rematchBtn').onclick = function(){ if (S.mode === 'online') netRematch(); else start(S.mode); };
+  $('nextBtn').onclick = beginTurn;
+  $('nextGameBtn').onclick = function(){ if (S.mode === 'online') netNextGame(); else startSub(S.series.idx + 1); };
+  $('rematchBtn').onclick = function(){ if (S.mode === 'online') netRematch(); else { HUB.game = S.kind; start(S.mode); } };
   $('quitBtn').onclick = toMenu;
+  $('muteBtn').onclick = function(e){
+    e.stopPropagation();
+    Snd.muted = !Snd.muted;
+    try { localStorage.setItem('pd-mute', Snd.muted ? '1' : '0'); } catch (err) {}
+    if (Snd.muted) ambience(false); else ambience(true);
+    paintMute();
+  };
+  $('stage').addEventListener('click', function(e){ if (e.target.closest('button')) return; skipAnim(); });
+  Array.prototype.forEach.call(document.querySelectorAll('.reacts button'), function(b){
+    b.addEventListener('click', function(){ sendReact(b.dataset.r); });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('.pick'), function(b){
     b.addEventListener('click', function(){ onPick(Number(b.dataset.z)); });
   });
+  $('shareBtn').onclick = shareInvite;
+  if (TG && TG.BackButton) TG.BackButton.onClick(function(){
+    if (!$('game').hidden) toMenu(); else { netDetach(); showScreen('menu'); }
+  });
+  if (TG && !nick()){
+    var tgu = TG.initDataUnsafe && TG.initDataUnsafe.user;
+    if (tgu && (tgu.first_name || tgu.username)) setNick(String(tgu.first_name || tgu.username));
+  }
+  if (!TG){
+    $('onlineBtn').querySelector('small').textContent = 'Works in Telegram: t.me/the_duelist_bot/play';
+    $('shareBtn').hidden = true;
+  }
+  paintMute();
+  loadStats();
+  renderHub();
   // A link ending in #CODE opens straight into the join screen.
   if (/^#[A-Za-z0-9]{4}$/.test(location.hash)) openLobby(location.hash.slice(1).toUpperCase());
+  // An invite link t.me/the_duelist_bot/play?startapp=CODE joins that match straight away.
+  var startCode = TG && TG.initDataUnsafe && TG.initDataUnsafe.start_param;
+  if (startCode && /^[A-Za-z0-9]{4}$/.test(startCode)) openLobby(startCode.toUpperCase(), true);
 
   // Test hook, only active with #debug in the address.
   if (location.hash === '#debug'){
     window.__pd = {
-      shot: function(shot, dive, t){ if (!S) start('cpu'); setControls('none'); A.plan = makePlan(shot, dive); A.playing = true; A.freeze = t; },
-      idle: function(){ if (!S) start('cpu'); A.plan = null; A.playing = false; A.freeze = null; }
+      shot: function(shot, dive, t){ HUB.game = 'pen'; if (!S || S.game !== 'pen') start('cpu'); setControls('none'); A.rps = null; A.plan = makePlan(shot, dive); A.playing = true; A.freeze = t; },
+      idle: function(){ if (!S) start('cpu'); A.plan = null; A.playing = false; A.freeze = null; },
+      rps: function(a, b, t){ HUB.game = 'rps'; if (!S || S.game !== 'rps') start('cpu'); setControls('none'); A.plan = null; A.rps = {a:a, b:b, w:rpsBeats(a, b)}; A.playing = true; A.freeze = t; },
+      rpsIdle: function(){ HUB.game = 'rps'; start('cpu'); A.freeze = null; }
     };
   }
 })();
