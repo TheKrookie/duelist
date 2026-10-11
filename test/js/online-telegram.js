@@ -20,7 +20,8 @@
 var SB_URL = 'https://nlkbnoinoowpobvjmfgn.supabase.co';
 var SB_KEY = 'sb_publishable_WZ8HtvzQuuylVeM9vwFngQ_2Rnz0U6O';
 var FN_URL = SB_URL + '/functions/v1/duel';
-var BOT_APP = 'https://t.me/the_duelist_bot/play';
+// The test build (site/test/) invites friends into the test Mini App, so both play the same version.
+var BOT_APP = 'https://t.me/the_duelist_bot/' + (/\/test\//.test(location.pathname) ? 'test' : 'play');
 var Net = {init: null, sb: null, ch: null, code: null, seat: null, match: null,
            turns: {}, locks: {}, ready: {}, chat: [], reactSeen: [0, 0], chatSeen: 0, poll: null, gen: 0};
 var NET_MSG = {
