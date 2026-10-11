@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#2a74f0">
 <title>Duelist</title>
-<!-- Duelist game 0.7 · Telegram build · online server v1.2 -->
+<!-- Duelist game 0.7.1 · Telegram build · online server v1.2 -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>html,body{background:#2a74f0}body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
@@ -1804,8 +1804,8 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
   var TUTORIAL = {
     pen: {t: 'PENALTY DUEL', s: ['Take turns: one shoots, the other keeps goal.', 'Both secretly pick left, middle or right.', 'Same side = saved, different side = goal. 5 kicks each, then sudden death.']},
     rps: {t: 'ROCK PAPER SCISSORS', s: ['Both throw at the same time, in secret.', 'Rock beats scissors, scissors beat paper, paper beats rock.', 'First to win 3 rounds wins. Draws are replayed.']},
-    tug: {t: 'TUG OF WAR', s: ['You each get 100 strength for the whole match.', 'Every round, secretly choose how hard to pull. The bigger pull moves the rope one step.', 'Spent strength is gone. Drag the rope 3 steps your way to win.']},
-    box: {t: 'BOXING', s: ['You each start with 100 health. Every turn, pick a punch AND a guard.', 'Jab hits for 15, hook 22, uppercut 30.', 'High guard stops jabs, duck stops hooks, low guard stops uppercuts. A blocked punch costs the puncher 5, 10 or 15. Knock them out, or lead after 8 turns.']},
+    tug: {t: 'TUG OF WAR', s: ['You each get 100 strength for the whole match.', 'Every round, secretly choose how hard to pull. The bigger pull moves the rope one step.', 'Spent strength is gone. Equal pulls: the rope doesn’t move. If you both run out, you each get 10 more. Drag the rope 3 steps your way to win.']},
+    box: {t: 'BOXING', s: ['You each start with 100 health. Every turn, pick a punch AND a guard.', 'Jab hits for 15, hook 22, uppercut 30.', 'High guard stops jabs, duck stops hooks, low guard stops uppercuts. A blocked punch costs the puncher 5, 10 or 15. Knock them out, or lead after 8 turns. Still level? Keep fighting until someone leads.']},
     qd: {t: 'QUICK DRAW', s: ['Keep your hands off the screen until it says DRAW!', 'Then tap as fast as you can. The faster finger wins the draw.', 'Tap too early (or faster than 0.1 s, which only a guess can do) and you lose that draw. First to 3 wins.']}
   };
 
@@ -1868,7 +1868,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
         fill.style.background = hp[p] > 50 ? '#3ee06a' : hp[p] > 25 ? '#ffd84a' : '#ff4d5e';
         bar.appendChild(fill); $('dots' + p).appendChild(bar);
       });
-      score = [Math.max(0, hp[0]), Math.max(0, hp[1])]; mid = 'Turn ' + Math.min(n + 1, Math.max(n + 1, BOX_TURNS)) + '/' + BOX_TURNS;
+      score = [Math.max(0, hp[0]), Math.max(0, hp[1])]; mid = n < BOX_TURNS ? 'Turn ' + (n + 1) + '/' + BOX_TURNS : 'Extra turn';
     }
     $('dots0').style.width = g === 'box' ? '100%' : ''; $('dots1').style.width = g === 'box' ? '100%' : '';
     $('score').textContent = score[0] + ':' + score[1];
@@ -2004,6 +2004,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     Tm.id = setInterval(function(){
       var left = (Tm.end - performance.now()) / 1000;
       $('roleTimerBar').style.width = Math.max(0, left / TIMER_S * 100) + '%';
+      if (left <= 3 && !$('tut').hidden){ $('tut').hidden = true; }   // "How to play" opened mid-pick: get it out of the way so the pick isn't lost
       if (left <= 3 && left > 0 && Math.ceil(left) !== Tm.ticked){ Tm.ticked = Math.ceil(left); SFX.tick(); }
       if (left <= 0){ stopTimer(); autoPick(); }
     }, 100);
@@ -2041,7 +2042,8 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     stopTimer();
     A.playing = false; A.plan = null; A.rps = null; A.tug = null; A.box = null; A.qd = null; A.done = true; A.ev = [];
     $('flash').hidden = true; $('skipHint').hidden = true; $('handoff').hidden = true;
-    S.pa = null; S.pb = null; S.phase = null; S.qdLive = null;
+    S.pa = null; S.pb = null; S.phase = null; S.qdLive = null; S.qdPending = false;
+    $('helpBtn').hidden = false;
     $('pickArea').innerHTML = '';
     var w = winner();
     renderBoard(w !== null);
@@ -2049,7 +2051,9 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     maybeTutorial(S.game);
     if (S.mode === 'online'){ netStep(); return; }
     if (S.game === 'qd'){
-      if (S.mode === 'cpu') setPhase(0); else startQd();
+      if (S.mode === 'cpu') setPhase(0);
+      else if (!$('tut').hidden){ S.qdPending = true; setControls('none'); }   // start the draw once "How to play" is closed
+      else startQd();
       return;
     }
     if (S.mode === 'cpu'){ setPhase(0); return; }
@@ -2106,6 +2110,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     $('pickArea').hidden = S.mode !== 'local';
     $('role').hidden = false; $('waitbar').hidden = true;
     S.phase = 'qd';
+    $('helpBtn').hidden = true;
     SFX.wind();
   }
   function qdTick(now){
@@ -2132,6 +2137,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
   }
   function qdFinish(){
     var L = S.qdLive; L.done = true;
+    $('helpBtn').hidden = false;
     if (S.mode === 'online'){ var my = L.taps[S.me]; S.qdLive = null; netCommit(my); return; }
     S.pa = L.taps[0]; S.pb = L.taps[1];
     S.qdLive = null;
@@ -2191,7 +2197,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     }
     if (g === 'qd'){
       var t = function(i){ var m = turn.ms[i]; return m < 0 ? 'too early' : m >= 9998 ? 'no shot' : (m / 1000).toFixed(3) + ' s'; };
-      if (W === null) return ['NO WINNER', '#ffffff', turn.why === 'early' ? 'Both drew too early. Draw again.' : 'Nobody fired. Draw again.'];
+      if (W === null) return ['NO WINNER', '#ffffff', turn.why === 'early' ? 'Both drew too early. Draw again.' : turn.ms[0] >= 9998 ? 'Nobody fired. Draw again.' : 'Dead heat: ' + t(0) + ' each. Draw again.'];
       if (turn.why === 'early') return [name(1 - W).toUpperCase() + ' DREW TOO EARLY!', KITC[W], name(W) + ' wins the draw.'];
       return [(isMe(W) ? 'YOU' : name(W).toUpperCase()) + ' DRAW FIRST!', col, name(0) + ' ' + t(0) + ' vs ' + name(1) + ' ' + t(1) + '.'];
     }
@@ -2295,7 +2301,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     stopTimer();
     if (S && S.mode === 'online'){ netDetach(); forget(); }
     S = null;
-    $('handoff').hidden = true; $('flash').hidden = true;
+    $('handoff').hidden = true; $('flash').hidden = true; $('tut').hidden = true; $('helpBtn').hidden = false;
     showScreen('menu');
   }
 
@@ -2322,6 +2328,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     try { localStorage.setItem('pd-tut-' + g, '1'); } catch (e) {}
     $('tut').hidden = true;
     if (Tm.pending && S && S.phase === 'pick') startTimer();
+    if (S && S.qdPending && S.game === 'qd' && !S.qdLive){ S.qdPending = false; startQd(); }
   }
 
   /* =====================================================================
@@ -2595,6 +2602,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     MM.going = true;
     $('queueTitle').textContent = 'OPPONENT FOUND!';
     SFX.win(); haptic('success');
+    $('queueCancel').disabled = true;   // the match already exists on the server: no cancelling now
     var wait = Math.max(900, 2500 - (Date.now() - MM.t0));   // the queue screen always shows for at least 2.5 s
     setTimeout(function(){ stopQueue(); remember(code, seat); netAttach(code, seat); }, wait);
   }
@@ -2603,6 +2611,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     if (MM.poll) clearInterval(MM.poll);
     if (MM.ticket && !MM.going) api('queue_leave', {ticket: MM.ticket}).catch(function(){});
     MM = {ticket: null, t0: 0, tick: null, poll: null, busy: false, going: false};
+    $('queueCancel').disabled = false;
   }
 
   /* ---------- attach to a match ---------- */
@@ -2797,7 +2806,7 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
     $('rematchBtn').disabled = true; $('nextGameBtn').disabled = true;
     api('advance', {code: Net.code, seat: S.me, game: S.gnum, rematch: !!rematch})
       .then(refetch)
-      .catch(function(e){ showWait('HMM', e.message); })
+      .catch(function(e){ if (!S || S.mode !== 'online') return; showWait('HMM', e.message); $(S.phase === 'subover' ? 'nextGameBtn' : 'rematchBtn').hidden = false; })
       .then(function(){ $('rematchBtn').disabled = false; $('nextGameBtn').disabled = false; });
   }
   function netNextGame(){ netAdvance(false); }
@@ -2975,9 +2984,10 @@ button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2
   };
   $('stage').addEventListener('pointerdown', function(e){
     if (e.target.closest('button')) return;
-    if (S && S.qdLive && S.mode !== 'local'){ e.preventDefault(); qdTap(S.mode === 'online' ? S.me : 0); return; }
+    if (S && S.qdLive && S.mode !== 'local'){ e.preventDefault(); qdTapAt = performance.now(); qdTap(S.mode === 'online' ? S.me : 0); return; }
   });
-  $('stage').addEventListener('click', function(e){ if (e.target.closest('button')) return; if (!(S && S.qdLive)) skipAnim(); });
+  var qdTapAt = -1e9;   // the tap that fires the gun must not also skip the BANG animation that follows it
+  $('stage').addEventListener('click', function(e){ if (e.target.closest('button')) return; if (performance.now() - qdTapAt < 800) return; if (!(S && S.qdLive)) skipAnim(); });
   Array.prototype.forEach.call(document.querySelectorAll('#reacts button'), function(b){
     b.addEventListener('click', function(){ sendReact(b.dataset.r); });
   });
