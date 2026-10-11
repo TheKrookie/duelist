@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#2a74f0">
+<title>Duelist</title>
+<!-- Duelist game 0.9 · Telegram build · online server v1.4 (accounts) -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<style>html,body{background:#2a74f0}body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<link rel="stylesheet" href="css/style.css?v=0.9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800;900&display=swap">
+</head>
+<body>
+
+<div class="app">
+  <section class="menu" id="menu">
+    <div class="topbar">
+      <div class="me" id="meChip">
+        <div class="avatar" id="meAvatar">?</div>
+        <div><b id="meName">Player</b><button type="button" id="changeName">Change name</button></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div class="chip" title="Win rate"><svg viewBox="0 0 24 24" fill="none" stroke="#ffd84a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span id="chipRate">–</span></div>
+        <div class="chip" title="Win streak"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a2a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3 0-3-1-5 0-8z"/></svg><span id="chipStreak">0</span></div>
+      </div>
+    </div>
+    <div class="nickbox" id="nickBox" hidden>
+      <label for="nickIn">What should we call you?</label>
+      <div class="row2"><input class="input" id="nickIn" maxlength="12" placeholder="Alex" autocomplete="nickname"><button type="button" class="btn y" id="nickSave" style="width:auto;padding-inline:18px">SAVE</button></div>
+    </div>
+    <div style="display:grid;gap:4px;justify-items:center">
+      <div class="logo ol" aria-label="duelist"><i style="background:#3d9bff"></i>duelist<i style="background:#ff8a2a"></i></div>
+      <h1 class="hub-title ol">PICK YOUR DUEL</h1>
+    </div>
+    <div class="games" id="games" role="radiogroup" aria-label="Game">
+      <button type="button" class="game wide g-mix" data-game="mix" role="radio" aria-checked="false">
+        <svg viewBox="0 0 60 52" aria-hidden="true"><rect x="2" y="10" width="17" height="32" rx="6" fill="#36c45a" stroke="#fff" stroke-width="3"/><rect x="22" y="10" width="17" height="32" rx="6" fill="#ff4d5e" stroke="#fff" stroke-width="3"/><rect x="42" y="10" width="16" height="32" rx="6" fill="#ffc23a" stroke="#fff" stroke-width="3"/></svg>
+        <span class="txt"><b class="ols">MIXED DUEL</b><small>Best of 3 random games</small></span>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+      <button type="button" class="game g-pen" data-game="pen" role="radio" aria-checked="true">
+        <svg viewBox="0 0 64 58" aria-hidden="true"><path d="M6 50V12h52v38" fill="none" stroke="#1b1236" stroke-width="6" stroke-linejoin="round"/><path d="M6 50V12h52v38" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><circle cx="32" cy="38" r="13" fill="#fff" stroke="#1b1236" stroke-width="3"/><polygon points="32,31 38,35.5 35.7,42 28.3,42 26,35.5" fill="#1b1236"/></svg>
+        <b class="ols">PENALTY DUEL</b><small>Shoot or save</small>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+      <button type="button" class="game g-rps" data-game="rps" role="radio" aria-checked="false">
+        <svg viewBox="0 0 64 58" aria-hidden="true"><rect x="10" y="20" width="34" height="30" rx="11" fill="#f2c39c" stroke="#1b1236" stroke-width="3"/><rect x="36" y="22" width="16" height="10" rx="5" fill="#f2c39c" stroke="#1b1236" stroke-width="3"/><rect x="36" y="31" width="16" height="10" rx="5" fill="#f2c39c" stroke="#1b1236" stroke-width="3"/><rect x="35" y="40" width="14" height="9" rx="4.5" fill="#f2c39c" stroke="#1b1236" stroke-width="3"/><rect x="14" y="12" width="24" height="11" rx="5.5" fill="#ffd9b8" stroke="#1b1236" stroke-width="3"/></svg>
+        <b class="ols">ROCK PAPER SCISSORS</b><small>First to 3</small>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+      <button type="button" class="game g-tug" data-game="tug" role="radio" aria-checked="false">
+        <svg viewBox="0 0 64 58" aria-hidden="true"><path d="M2 36 C18 30, 46 30, 62 36" fill="none" stroke="#1b1236" stroke-width="9" stroke-linecap="round"/><path d="M2 36 C18 30, 46 30, 62 36" fill="none" stroke="#d9a35c" stroke-width="5" stroke-linecap="round"/><path d="M32 31V10" stroke="#1b1236" stroke-width="3"/><path d="M32 11h16l-4 5 4 5H32z" fill="#ff4d5e" stroke="#1b1236" stroke-width="3" stroke-linejoin="round"/></svg>
+        <b class="ols">TUG OF WAR</b><small>Bid your strength</small>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+      <button type="button" class="game g-box" data-game="box" role="radio" aria-checked="false">
+        <svg viewBox="0 0 64 58" aria-hidden="true"><path d="M14 28c0-12 8-20 20-20s18 8 18 18-4 14-10 16H20c-4 0-6-3-6-6z" fill="#fff" stroke="#1b1236" stroke-width="3" stroke-linejoin="round"/><path d="M14 30c-6-1-8 4-6 8s6 4 9 2" fill="#fff" stroke="#1b1236" stroke-width="3" stroke-linejoin="round"/><rect x="18" y="42" width="26" height="10" rx="3" fill="#1b1236"/></svg>
+        <b class="ols">BOXING</b><small>Hit, block, knock out</small>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+      <button type="button" class="game wide g-qd" data-game="qd" role="radio" aria-checked="false">
+        <svg viewBox="0 0 74 52" aria-hidden="true" style="width:70px"><path d="M6 36c10 4 52 4 62 0" fill="none" stroke="#1b1236" stroke-width="3" stroke-linecap="round"/><path d="M8 34c4-2 10-3 14-3 2-14 8-22 15-22s13 8 15 22c4 0 10 1 14 3-8 6-50 6-58 0z" fill="#8b4a1f" stroke="#1b1236" stroke-width="3" stroke-linejoin="round"/><path d="M22 28c10 2 20 2 30 0" fill="none" stroke="#ffd84a" stroke-width="3"/></svg>
+        <span class="txt"><b class="ols">QUICK DRAW</b><small style="color:#6b4300;opacity:1">Fastest finger wins</small></span>
+        <span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      </button>
+    </div>
+    <div class="modes">
+      <button type="button" class="btn y big" id="onlineBtn"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1236" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M17 14.5c2.4.2 4 1.7 4.5 4.5"/></svg>PLAY ONLINE</button>
+      <div class="two">
+        <button type="button" class="btn b ols" id="cpuBtn">VS COMPUTER</button>
+        <button type="button" class="btn o ols" id="localBtn">ONE PHONE</button>
+      </div>
+    </div>
+    <div class="panel" id="stats"></div>
+  </section>
+
+  <section class="lobby" id="lobby" hidden>
+    <span class="badge" id="lobbyGame"></span>
+    <h2 class="ol">PLAY ONLINE</h2>
+    <div id="lobbyForm" style="display:grid;gap:14px">
+      <button type="button" class="btn y big" id="findBtn">FIND AN OPPONENT</button>
+      <button type="button" class="btn b ols" id="createBtn">CHALLENGE A FRIEND<small style="color:#fff">Get a code to send them</small></button>
+      <div class="or">OR JOIN A FRIEND</div>
+      <div class="row2"><input class="input joinin" id="codeIn" maxlength="4" placeholder="K7Q2" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Match code"><button type="button" class="btn o ols" id="joinBtn" style="width:auto;padding-inline:20px">JOIN</button></div>
+    </div>
+    <div id="waitBox" hidden style="display:grid;gap:14px">
+      <p style="margin:0;font-size:16px">Invite a friend in Telegram, or tell them this code:</p>
+      <div class="code" id="codeShow"></div>
+      <button type="button" class="btn y ols" id="shareBtn">SEND INVITE<small style="color:#fff">Your friend taps the link and joins</small></button>
+      <button type="button" class="btn w" id="copyBtn">COPY CODE</button>
+      <p style="margin:0;display:flex;align-items:center;gap:10px"><span class="pulse"></span>Waiting for your friend to join…</p>
+    </div>
+    <div class="queue" id="queueBox" hidden>
+      <svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="#fff" stroke="#1b1236" stroke-width="6"/><polygon points="50,32 66,44 60,63 40,63 34,44" fill="#1b1236"/><path d="M50 6v26M92 38L66 44M76 88L60 63M24 88l16-25M8 38l26 6" stroke="#1b1236" stroke-width="5"/></svg>
+      <h3 class="ol" id="queueTitle">FINDING AN OPPONENT…</h3>
+      <div class="qstats">
+        <div class="chip"><span class="pulse"></span><span id="queueCount">1 player in queue</span></div>
+        <div class="chip" id="queueTime">0:00</div>
+      </div>
+      <button type="button" class="btn w" id="queueCancel" style="max-width:220px">CANCEL</button>
+    </div>
+    <p class="err" id="lobbyErr" role="alert"></p>
+    <button type="button" class="link quit" id="lobbyBack">Back to menu</button>
+  </section>
+
+  <section id="game" hidden style="display:contents">
+    <div class="board" id="board">
+      <div class="sides">
+        <div class="side p0"><span class="nm ols" id="nm0"></span><span class="dots" id="dots0"></span></div>
+        <div class="mid"><b id="score">0:0</b><span id="midLabel"></span></div>
+        <div class="side p1"><span class="nm ols" id="nm1"></span><span class="dots" id="dots1"></span></div>
+      </div>
+      <div class="kick" id="kickLabel"></div>
+    </div>
+
+    <div class="stage" id="stage">
+      <canvas id="pitch" aria-label="Game scene"></canvas>
+      <button type="button" class="stbtn" id="helpBtn" aria-label="How to play"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 9a3 3 0 0 1 5.6 1c0 2-3 2.5-3 4.5"/><path d="M12 18.5h.01"/></svg></button>
+      <button type="button" class="stbtn" id="muteBtn" aria-label="Turn sound off"></button>
+      <div class="skiphint" id="skipHint" hidden>Tap to skip</div>
+      <div class="flash" id="flash" hidden><b class="ol" id="flashBig"></b><span id="flashSmall"></span></div>
+      <div class="handoff" id="handoff" hidden>
+        <h2 class="ol" id="handTitle"></h2>
+        <p id="handSub"></p>
+        <button type="button" class="btn y" id="handBtn"></button>
+      </div>
+    </div>
+
+    <div class="notice" id="notice" hidden></div>
+
+    <div class="role" id="role">
+      <svg id="roleIcon" viewBox="0 0 34 34" aria-hidden="true"></svg>
+      <div class="rt"><h3 class="ols" id="roleTitle"></h3><p id="roleSub"></p><div class="timer" id="roleTimer" hidden><i id="roleTimerBar"></i></div></div>
+    </div>
+
+    <div class="waitbar" id="waitbar" hidden>
+      <span class="pulse"></span>
+      <div><b id="waitTitle">Locked in</b><span class="t" id="waitSub"></span></div>
+    </div>
+
+    <div id="pickArea"></div>
+
+    <div class="social" id="social" hidden>
+      <div class="chatlog" id="chatLog" aria-live="polite"></div>
+      <div class="reacts" id="reacts">
+        <button type="button" data-r="Nice!">NICE!</button><button type="button" data-r="Lucky!">LUCKY!</button><button type="button" data-r="Wow">WOW</button><button type="button" data-r="GG">GG</button>
+      </div>
+      <div class="chatrow">
+        <input id="chatIn" maxlength="120" placeholder="Say something…" autocomplete="off" aria-label="Chat message">
+        <button type="button" id="chatSend">SEND</button>
+        <button type="button" class="mute2" id="chatMute" aria-pressed="false">MUTE</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn y big" id="nextBtn" hidden>NEXT</button>
+      <button type="button" class="btn y big" id="nextGameBtn" hidden>NEXT GAME</button>
+      <button type="button" class="btn y big" id="rematchBtn" hidden>REMATCH</button>
+      <button type="button" class="link quit" id="quitBtn">Back to menu</button>
+    </div>
+  </section>
+
+  <div class="tut" id="tut" hidden role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+    <div class="tutcard">
+      <span class="badge" id="tutBadge" style="color:#ffd84a">HOW TO PLAY</span>
+      <h2 id="tutTitle"></h2>
+      <ol id="tutSteps"></ol>
+      <button type="button" class="btn y big" id="tutOk">GOT IT!</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/base.js?v=0.9"></script>
+<script src="js/scene.js?v=0.9"></script>
+<script src="js/toon.js?v=0.9"></script>
+<script src="js/games/penalty.js?v=0.9"></script>
+<script src="js/games/rps.js?v=0.9"></script>
+<script src="js/games/tug.js?v=0.9"></script>
+<script src="js/games/boxing.js?v=0.9"></script>
+<script src="js/games/quickdraw.js?v=0.9"></script>
+<script src="js/sound.js?v=0.9"></script>
+<script src="js/loop.js?v=0.9"></script>
+<script src="js/rules.js?v=0.9"></script>
+<script src="js/core.js?v=0.9"></script>
+<script src="js/stats.js?v=0.9"></script>
+<script src="js/online-telegram.js?v=0.9"></script>
+<script src="js/main.js?v=0.9"></script>
+</body>
+</html>
